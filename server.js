@@ -36,13 +36,14 @@ app.post('/api/admin/deliver/:orderId', async (req, res) => {
     orders[orderIndex].deliveredAt = new Date().toISOString();
 
     // ناردنی ئیمەیڵ[cite: 5]
-    const mailOptions = {
-        from: '"kurdHS Team" <alleyesonyouna@gmail.com>',
-        to: order.email, // ئیمەیڵی کڕیار[cite: 5]
+   const mailOptions = {
+        // لێرە پێویستە هێمای < پێش ئیمەیڵەکە هەبێت
+        from: '"kurdHS Team" <alleyesonyouna@gmail.com>', 
+        to: order.email, // ئیمەیڵی کڕیار کە لە داواکارییەکەدا هاتووە
         subject: `Your Key - ${order.label}`,
         html: `
             <div style="font-family: sans-serif; padding: 20px; background-color: #f4f4f4;">
-                <h2>Hi! Your key is ready.</h2>
+                <h2 style="color: #00e5ff;">Hi! Your key is ready.</h2>
                 <p>Product: <b>${order.label}</b></p>
                 <div style="padding: 15px; background: #fff; border: 2px solid #00e5ff; font-size: 20px; font-weight: bold; text-align: center;">
                     ${assignedKey}
