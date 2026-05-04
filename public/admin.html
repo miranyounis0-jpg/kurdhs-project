@@ -410,12 +410,32 @@
             .navbar { padding: 14px 16px; }
         }
 
-        /* Products / Images */
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-        }
+     <!-- ئەمە شوێنی بەرهەمەکانە لە ئەدمین پانێڵ -->
+<div id="admin-products-container" class="grid-container">
+    <!-- بەرهەمەکان لێرە بە شێوەی ئۆتۆماتیکی دروست دەبن -->
+</div>
+
+<script>
+async function loadAdminProducts() {
+    const res = await fetch('/api/products');
+    const products = await res.json();
+    const container = document.getElementById('admin-products-container');
+    container.innerHTML = ''; // پاککردنەوەی شوێنەکە
+
+    for (const [id, data] of Object.entries(products)) {
+        container.innerHTML += `
+            <div class="product-box">
+                <h3>${data.label}</h3>
+                <p>Price: $${data.price}</p>
+                <input type="text" id="keys-${id}" placeholder="Enter keys here...">
+                <button onclick="addStock('${id}')">Add Stock</button>
+            </div>
+        `;
+    }
+}
+// بانگکردنی فەنکشنەکە کاتێک لاپەڕەکە دەکرێتەوە
+loadAdminProducts();
+</script>
 
         .product-card {
             background: rgba(255,255,255,0.04);
