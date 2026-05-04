@@ -138,12 +138,12 @@ app.post('/api/admin/deliver/:orderId', async (req, res) => {
         res.json({ success: true, message: 'کلیلەکە گەیەندرا بەڵام کێشە لە ناردنی ئیمەیڵ هەبوو.' });
     }
 });
-
-// --- ٥. پیشاندانی لاپەڕەکانی فرۆشتن و ئەدمین ---
+// لاپەڕەی سەرەکی بۆ کڕیارەکان
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html'))); 
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 app.get('/track', (req, res) => res.sendFile(path.join(__dirname, 'public', 'track.html')));
 // لاپەڕەی سەرەکی بۆ کڕیارەکان
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+
 
 // --- ٦. بەشی ئامارەکان (Analytics) ---
 let analyticsData = {
