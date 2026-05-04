@@ -13,7 +13,9 @@ let stock = { one_day: [], seven_day: [], thirty_day: [] };
 let products = {
     one_day: { price: 5, imageUrl: "", label: "1 Day Key" },
     seven_day: { price: 20, imageUrl: "", label: "7 Days Key" },
-    thirty_day: { price: 60, imageUrl: "", label: "30 Days Key" }
+    thirty_day: { price: 60, imageUrl: "", label: "30 Days Key" },
+    sixty_day: { price: 100, imageUrl: "", label: "60 Days Key" },
+    ninety_day: { price: 140, imageUrl: "", label: "90 Days Key" }
 };
 const adminToken = "secret-session-123";
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxR_jmwD1ry1Lh-XhMHNKJlarxA7CRz57AZUrcqHr5id3amFHdx8akGg3jidFGAclcO2A/exec'; 
