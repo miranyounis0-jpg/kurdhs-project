@@ -3,562 +3,1236 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>kurdHS - Digital Keys</title>
+    <title>kurdHS - Admin Panel</title>
     <style>
-        /* --- The Design / CSS --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
-            background: #0f172a;
+            background: linear-gradient(135deg, #0f172a, #1e3a8a);
             color: white;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
             min-height: 100vh;
-            position: relative;
         }
 
-        .bg-video {
-            position: fixed;
-            inset: 0;
-            width: 100vw;
-            height: 100vh;
-            object-fit: cover;
-            z-index: -2;
-            pointer-events: none;
-        }
-
-        .bg-overlay {
-            position: fixed;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(15,23,42,0.55), rgba(30,58,138,0.45));
-            z-index: -1;
-            pointer-events: none;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .bg-video { display: none; }
-            body { background: linear-gradient(135deg, #0f172a, #1e3a8a); }
-        }
-
-        /* Navbar */
         .navbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px 50px;
-            background: rgba(0, 0, 0, 0.2);
+            padding: 16px 40px;
+            background: rgba(0,0,0,0.3);
+            border-bottom: 1px solid rgba(0,229,255,0.2);
         }
 
-        .logo {
-            color: #00e5ff;
+        .logo { color: #00e5ff; font-weight: bold; font-size: 20px; }
+        .nav-right { display: flex; align-items: center; gap: 16px; }
+        .badge { background: rgba(0,229,255,0.15); color: #00e5ff; padding: 4px 12px; border-radius: 20px; font-size: 13px; }
+
+        .logout-btn {
+            background: rgba(239,68,68,0.2);
+            border: 1px solid rgba(239,68,68,0.5);
+            color: #ef4444;
+            padding: 6px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
             font-weight: bold;
-            font-size: 24px;
+            transition: 0.2s;
         }
+        .logout-btn:hover { background: rgba(239,68,68,0.35); }
 
-        .nav-links {
+        /* Page Tabs */
+        .page-tabs {
             display: flex;
-            gap: 30px;
+            gap: 0;
+            background: rgba(0,0,0,0.25);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            padding: 0 40px;
         }
 
-            .nav-links div {
-                color: white;
-                cursor: pointer;
-                transition: color 0.2s;
-            }
-
-                .nav-links div:hover {
-                    color: #00e5ff;
-                }
-
-        /* Main Container */
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 40px 20px;
+        .page-tab {
+            padding: 14px 24px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: 0.2s;
         }
 
-        /* Login Box */
+        .page-tab:hover { color: #fff; }
+        .page-tab.active { color: #00e5ff; border-bottom-color: #00e5ff; }
+
+        /* Login Screen */
+        .login-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 60px);
+        }
+
         .login-box {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255,255,255,0.05);
             backdrop-filter: blur(10px);
             padding: 40px;
             border-radius: 15px;
+            width: 340px;
             text-align: center;
-            width: 100%;
-            max-width: 400px;
-            margin: 0 auto 60px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border: 1px solid rgba(0,229,255,0.2);
         }
 
-            .login-box h2 {
-                color: #00e5ff;
-                margin-top: 0;
-            }
+        .login-box h2 { color: #00e5ff; margin-bottom: 6px; }
+        .login-box p { color: #aaa; font-size: 14px; margin-bottom: 24px; }
 
-            .login-box p {
-                color: #ccc;
-                margin-bottom: 20px;
-            }
-
-        /* Inputs & Buttons */
-        input {
+        input[type="password"], input[type="text"], input[type="email"] {
             width: 100%;
             padding: 12px;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             border-radius: 8px;
             border: 1px solid rgba(255,255,255,0.2);
-            background: rgba(0,0,0,0.2);
+            background: rgba(0,0,0,0.3);
             color: white;
-            box-sizing: border-box;
+            font-size: 14px;
         }
 
-        button {
-            width: 100%;
-            padding: 12px;
+        input:focus { outline: none; border-color: #00e5ff; }
+        input::placeholder { color: #666; }
+
+        .btn {
+            padding: 11px 20px;
             border-radius: 8px;
             border: none;
             cursor: pointer;
             font-weight: bold;
+            font-size: 14px;
             transition: 0.2s;
         }
+        .btn:hover { opacity: 0.88; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-block { width: 100%; }
+        .btn-primary { background: #00e5ff; color: #000; }
+        .btn-success { background: #22c55e; color: #fff; }
+        .btn-danger { background: #ef4444; color: #fff; }
+        .btn-outline { background: transparent; border: 1px solid rgba(0,229,255,0.4); color: #00e5ff; }
+        .btn-outline:hover { background: rgba(0,229,255,0.1); }
+        .btn-wa { background: #25d366; color: #fff; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-wa:hover { background: #1fb855; opacity: 1; }
+        .btn-sm { padding: 6px 14px; font-size: 13px; }
+        .btn-xs { padding: 4px 10px; font-size: 12px; }
 
-            button:hover {
-                opacity: 0.9;
-            }
+        .error-msg { color: #ef4444; font-size: 13px; margin-top: 8px; }
 
-        .btn-primary {
-            background: #00e5ff;
-            color: #000;
-            margin-bottom: 10px;
-        }
+        /* Panels */
+        .admin-wrapper { display: none; }
 
-        .btn-secondary {
-            background: transparent;
-            border: 1px solid #00e5ff;
-            color: #00e5ff;
-        }
+        .panel { display: none; padding: 30px 40px; }
+        .panel.active { display: block; }
 
-        .btn-cancel {
-            background: #ef4444;
-            color: white;
-            margin-top: 10px;
-        }
-
-        /* Store Section - HIDDEN BY DEFAULT */
-        .store-section {
-            display: none;
-            text-align: center;
-        }
-
-            .store-section h2 {
-                font-size: 32px;
-                margin-bottom: 5px;
-            }
-
-            .store-section > p {
-                color: #ccc;
-            }
-
-        /* Cards */
-        .cards {
+        /* ---- Orders Panel ---- */
+        .panel-header {
             display: flex;
-            gap: 20px;
-            justify-content: center;
-            margin-top: 30px;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .panel-header h2 { font-size: 22px; }
+        .panel-header p { color: #aaa; font-size: 14px; margin-top: 4px; }
+
+        .stats-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 28px;
             flex-wrap: wrap;
         }
 
-        .card {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
+        .stat-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 16px 24px;
             flex: 1;
-            min-width: 200px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            min-width: 120px;
+            text-align: center;
         }
 
-            .card h3 {
-                margin: 0;
-                font-size: 20px;
-            }
+        .stat-card .stat-num { font-size: 28px; font-weight: bold; color: #00e5ff; }
+        .stat-card .stat-label { font-size: 13px; color: #aaa; margin-top: 4px; }
+        .stat-card.pending .stat-num { color: #f59e0b; }
+        .stat-card.delivered .stat-num { color: #22c55e; }
+        .stat-card.rejected .stat-num { color: #ef4444; }
 
-        .product-img-wrap {
-            width: 100%;
-            height: 160px;
-            border-radius: 10px;
+        .filter-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+
+        .tab {
+            padding: 7px 18px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: transparent;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .tab.active { background: rgba(0,229,255,0.15); border-color: #00e5ff; color: #00e5ff; }
+        .tab:hover:not(.active) { border-color: #aaa; color: #fff; }
+
+        .orders-container {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
             overflow: hidden;
-            margin-bottom: 16px;
-            background: rgba(0,0,0,0.25);
-            display: none;
         }
 
-        .product-img-wrap.has-image { display: block; }
+        .empty-state { padding: 60px; text-align: center; color: #aaa; }
+        .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
 
-        .product-img {
+        .order-row {
+            padding: 18px 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            transition: background 0.15s;
+        }
+
+        .order-row:last-child { border-bottom: none; }
+        .order-row:hover { background: rgba(255,255,255,0.03); }
+
+        .order-info { flex: 1; min-width: 0; }
+
+        .order-top {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+        }
+
+        .order-email { font-weight: 600; font-size: 15px; }
+
+        .status-badge {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-pending { background: rgba(245,158,11,0.2); color: #f59e0b; }
+        .status-delivered { background: rgba(34,197,94,0.2); color: #22c55e; }
+        .status-rejected { background: rgba(239,68,68,0.2); color: #ef4444; }
+
+        .order-meta { color: #aaa; font-size: 13px; line-height: 1.9; }
+        .order-meta span { color: #fff; }
+
+        .order-key {
+            background: rgba(0,229,255,0.1);
+            border: 1px solid rgba(0,229,255,0.3);
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-family: monospace;
+            font-size: 13px;
+            color: #00e5ff;
+            margin-top: 6px;
+            display: inline-block;
+        }
+
+        .order-actions { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+
+        /* ---- Stock Panel ---- */
+        .stock-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        .stock-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .stock-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            background: rgba(0,0,0,0.2);
+        }
+
+        .stock-card-title { font-weight: bold; font-size: 16px; }
+        .stock-count-badge {
+            background: rgba(0,229,255,0.15);
+            color: #00e5ff;
+            border: 1px solid rgba(0,229,255,0.3);
+            border-radius: 20px;
+            padding: 3px 12px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .stock-count-badge.low { background: rgba(245,158,11,0.15); color: #f59e0b; border-color: rgba(245,158,11,0.3); }
+        .stock-count-badge.empty { background: rgba(239,68,68,0.15); color: #ef4444; border-color: rgba(239,68,68,0.3); }
+
+        .stock-add-area { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+
+        .stock-add-area label {
+            display: block;
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 6px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        textarea {
+            width: 100%;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            padding: 10px;
+            resize: vertical;
+            min-height: 80px;
+            margin-bottom: 10px;
+        }
+
+        textarea:focus { outline: none; border-color: #00e5ff; }
+        textarea::placeholder { color: #555; }
+
+        .add-row { display: flex; gap: 8px; }
+        .add-row .btn { flex-shrink: 0; }
+
+        .keys-list-area { padding: 0 20px 20px 20px; max-height: 260px; overflow-y: auto; }
+
+        .keys-list-area::-webkit-scrollbar { width: 4px; }
+        .keys-list-area::-webkit-scrollbar-track { background: transparent; }
+        .keys-list-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+
+        .keys-list-toggle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px 6px 20px;
+            cursor: pointer;
+            color: #aaa;
+            font-size: 13px;
+            user-select: none;
+        }
+
+        .keys-list-toggle:hover { color: #fff; }
+
+        .key-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 7px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            gap: 10px;
+        }
+
+        .key-item:last-child { border-bottom: none; }
+
+        .key-item code {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #00e5ff;
+            word-break: break-all;
+        }
+
+        .key-item .del-btn {
+            background: rgba(239,68,68,0.15);
+            border: 1px solid rgba(239,68,68,0.3);
+            color: #ef4444;
+            border-radius: 6px;
+            padding: 3px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            flex-shrink: 0;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .key-item .del-btn:hover { background: rgba(239,68,68,0.3); }
+
+        .keys-hidden { display: none; }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #1e293b;
+            border: 1px solid rgba(0,229,255,0.3);
+            border-radius: 10px;
+            padding: 14px 20px;
+            color: #fff;
+            font-size: 14px;
+            max-width: 360px;
+            z-index: 999;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { border-color: rgba(34,197,94,0.5); }
+        .toast.error { border-color: rgba(239,68,68,0.5); }
+
+        .refresh-btn {
+            background: rgba(0,229,255,0.1);
+            border: 1px solid rgba(0,229,255,0.3);
+            color: #00e5ff;
+            padding: 8px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .refresh-btn:hover { background: rgba(0,229,255,0.2); }
+
+        @media (max-width: 600px) {
+            .panel { padding: 16px; }
+            .page-tabs { padding: 0 16px; }
+            .order-row { flex-direction: column; }
+            .order-actions { flex-direction: row; }
+            .navbar { padding: 14px 16px; }
+        }
+
+        /* Products / Images */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .product-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .product-card-title { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+        .product-card-sub { color: #aaa; font-size: 13px; margin-bottom: 16px; }
+
+        .product-image-preview {
+            width: 100%;
+            height: 180px;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.4);
+            border: 1px dashed rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #555;
+            font-size: 13px;
+            margin-bottom: 14px;
+            overflow: hidden;
+        }
+
+        .product-image-preview img {
             width: 100%;
             height: 100%;
             object-fit: cover;
             display: block;
-            transition: opacity 0.3s ease;
         }
 
-        .price {
+        .product-card label {
+            display: block;
+            font-size: 12px;
+            color: #aaa;
+            margin: 10px 0 6px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .product-card .url-row { display: flex; gap: 8px; }
+        .product-card .url-row input { flex: 1; margin: 0; }
+        .product-card .upload-row { display: flex; gap: 8px; align-items: center; }
+        .product-card input[type="file"] {
+            color: #aaa;
+            font-size: 12px;
+            background: transparent;
+            padding: 6px 0;
+            border: none;
+            flex: 1;
+        }
+        .product-card input[type="file"]::file-selector-button {
+            background: rgba(0,229,255,0.1);
             color: #00e5ff;
-            font-size: 36px;
-            font-weight: bold;
-            margin: 20px 0;
+            border: 1px solid rgba(0,229,255,0.3);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 10px;
         }
+        .product-card .feedback { font-size: 12px; color: #aaa; margin-top: 8px; min-height: 16px; }
+        .product-card .feedback.success { color: #22c55e; }
+        .product-card .feedback.error { color: #ef4444; }
 
-        .stock-text {
-            color: #aaa;
-            margin-bottom: 20px;
-            font-size: 14px;
+        .login-flag {
+            width: 110px;
+            height: auto;
+            display: block;
+            margin: 0 auto 18px;
+            border-radius: 6px;
+            box-shadow: 0 0 18px rgba(0,229,255,0.25), 0 4px 12px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.15);
         }
-
-        .card.hidden { display: none; }
-
-        .cards-empty {
-            display: none;
-            width: 100%;
-            text-align: center;
-            color: #aaa;
-            background: rgba(255,255,255,0.04);
-            border: 1px dashed rgba(255,255,255,0.12);
-            border-radius: 15px;
-            padding: 50px 20px;
-            font-size: 15px;
-        }
-
-        .cards-empty.show { display: block; }
-        .cards-empty .icon { font-size: 36px; display: block; margin-bottom: 10px; }
-
-        /* --- Payment Modal (Pop-up) --- */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(5px);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .payment-box {
-            background: #0f172a;
-            padding: 30px;
-            border-radius: 15px;
-            width: 350px;
-            text-align: center;
-            border: 1px solid rgba(0, 229, 255, 0.3);
-            box-shadow: 0 10px 30px rgba(0,229,255,0.2);
-        }
-
-            .payment-box h3 {
-                color: #00e5ff;
-                margin-top: 0;
-            }
     </style>
 </head>
 <body>
 
-    <!-- Background Video -->
-    <video class="bg-video" autoplay muted loop playsinline preload="auto" poster="/videos/bg-poster.jpg?v=2" aria-hidden="true" tabindex="-1" disablepictureinpicture>
-        <source src="/videos/bg.mp4?v=2" type="video/mp4">
-    </video>
-    <div class="bg-overlay" aria-hidden="true"></div>
-
-    <!-- Top Navigation -->
-    <div class="navbar">
-        <div class="logo">kurdHS</div>
-        <div class="nav-links">
-            <div>Home</div>
-            <div onclick="window.location.href='/track'" style="color:#00e5ff;">Track My Order</div>
-            <div>Contact</div>
-        </div>
+<div class="navbar">
+    <div class="logo">kurdHS Admin</div>
+    <div class="nav-right">
+        <span class="badge" id="adminBadge" style="display:none;">Admin</span>
+        <button class="logout-btn" id="logoutBtn" style="display:none;" onclick="logout()">Logout</button>
     </div>
+</div>
 
-    <div class="container">
-
-        <!-- Login Section -->
-        <div class="login-box" id="loginBox">
-            <h2>kurdHS</h2>
-            <p>Secure Digital Key Access</p>
-            <input type="email" id="emailInput" placeholder="Email">
-            <input type="password" id="passwordInput" placeholder="Password">
-            <button class="btn-primary" onclick="simulateLogin()">Login</button>
-            <button class="btn-secondary" onclick="simulateLogin()">Create & Verify Account</button>
-        </div>
-
-        <!-- Digital Keys Store Section -->
-        <div class="store-section" id="storeSection">
-            <h2>Digital Keys Store</h2>
-            <p>Welcome back! Browse all our available digital products below.</p>
-
-            <div class="cards" id="cardsContainer">
-
-                <!-- 1 Day Key Card -->
-                <div class="card hidden" id="card-one_day">
-                    <div class="product-img-wrap" id="imgwrap-one_day"><img class="product-img" id="img-one_day" alt="1 Day Key"></div>
-                    <h3>1 Day Key</h3>
-                    <div class="price" id="price-one_day">$5</div>
-                    <p class="stock-text">Keys Available: <span id="stock-one_day">..</span></p>
-                    <button class="btn-primary" onclick="openPayment('one_day')">Purchase Now</button>
-                </div>
-
-                <!-- 7 Days Key Card -->
-                <div class="card hidden" id="card-seven_day">
-                    <div class="product-img-wrap" id="imgwrap-seven_day"><img class="product-img" id="img-seven_day" alt="7 Days Key"></div>
-                    <h3>7 Days Key</h3>
-                    <div class="price" id="price-seven_day">$20</div>
-                    <p class="stock-text">Keys Available: <span id="stock-seven_day">..</span></p>
-                    <button class="btn-primary" onclick="openPayment('seven_day')">Purchase Now</button>
-                </div>
-
-                <!-- 30 Days Key Card -->
-                <div class="card hidden" id="card-thirty_day">
-                    <div class="product-img-wrap" id="imgwrap-thirty_day"><img class="product-img" id="img-thirty_day" alt="30 Days Key"></div>
-                    <h3>30 Days Key</h3>
-                    <div class="price" id="price-thirty_day">$60</div>
-                    <p class="stock-text">Keys Available: <span id="stock-thirty_day">..</span></p>
-                    <button class="btn-primary" onclick="openPayment('thirty_day')">Purchase Now</button>
-                </div>
-
-                <div class="cards-empty" id="cardsEmpty">
-                    <span class="icon">📦</span>
-                    No products are available right now. Please check back soon.
-                </div>
-
-            </div>
-        </div>
-    </div>
-
-    <!-- --- Manual Payment Pop-up (FIB) --- -->
-    <div class="modal-overlay" id="paymentModal">
-        <div class="payment-box">
-            <h3>Pay with FIB</h3>
-            <p>Total amount: <strong style="color: #00e5ff; font-size: 20px;" id="displayPrice">$0</strong></p>
-
-            <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: left;">
-                <p style="margin: 0 0 10px 0; font-size: 14px; color: #ccc;">1. Open your First Iraqi Bank (FIB) app and send the exact amount to:</p>
-                <p style="margin: 0 0 15px 0; font-size: 24px; font-weight: bold; color: white; text-align: center; letter-spacing: 2px;">
-                    0750 912 6370
-                </p>
-                <p style="margin: 0 0 5px 0; font-size: 14px; color: #ccc;">2. Enter the Transaction ID from your FIB receipt below:</p>
-            </div>
-
-            <input type="text" id="transactionId" placeholder="e.g., FIB-987654321">
-
-            <div style="margin-bottom:5px; text-align:left;">
-                <label style="color:#ccc; font-size:13px; margin-bottom:6px; display:block;">3. Enter your WhatsApp number to receive your key &amp; track your order:</label>
-                <input type="text" id="whatsappNumber" placeholder="e.g., +9647501234567" style="margin-bottom:0;">
-            </div>
-
-            <button class="btn-primary" style="margin-top:14px;" onclick="submitManualPayment()">Submit Payment Proof</button>
-            <button class="btn-cancel" onclick="closePayment()">Cancel</button>
-        </div>
-    </div>
-
-    <!-- --- The JavaScript Logic --- -->
-    <script>
-        let loggedInEmail = "";
-        let pendingKeyType = "";
-
-        // ---- Stock visibility (live updates from admin panel) ----
-        const TIERS = ['one_day', 'seven_day', 'thirty_day'];
-
-        function applyStock(stock) {
-            if (!stock) return;
-            let visible = 0;
-            TIERS.forEach(t => {
-                const count = Number(stock[t]) || 0;
-                const card = document.getElementById('card-' + t);
-                const span = document.getElementById('stock-' + t);
-                if (span) span.innerText = count;
-                if (card) {
-                    if (count > 0) {
-                        card.classList.remove('hidden');
-                        visible++;
-                    } else {
-                        card.classList.add('hidden');
-                    }
+<!-- Login Screen -->
+<div class="login-screen" id="loginScreen">
+    <div class="login-box">
+        <svg class="login-flag" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kurdistan flag">
+            <rect width="300" height="200" fill="#fff"/>
+            <rect width="300" height="66.67" y="0" fill="#ED2024"/>
+            <rect width="300" height="66.67" y="133.33" fill="#078930"/>
+            <g transform="translate(150 100)" fill="#FEBD11">
+                <circle r="22"/>
+                <g id="kf-rays"></g>
+            </g>
+        </svg>
+        <script>
+            (function(){
+                var g = document.getElementById('kf-rays');
+                if (!g) return;
+                var rays = '';
+                for (var i = 0; i < 21; i++) {
+                    var angle = (360 / 21) * i;
+                    rays += '<path d="M0 -24 L4 -44 L-4 -44 Z" transform="rotate(' + angle + ')"/>';
                 }
+                g.innerHTML = rays;
+            })();
+        </script>
+        <h2>Admin Login</h2>
+        <p>Enter your admin password to manage orders</p>
+        <input type="password" id="adminPassword" placeholder="Admin Password" onkeydown="if(event.key==='Enter') doLogin()">
+        <button class="btn btn-primary btn-block" onclick="doLogin()">Login</button>
+        <div class="error-msg" id="loginError"></div>
+    </div>
+</div>
+
+<!-- Admin Wrapper -->
+<div class="admin-wrapper" id="adminWrapper">
+
+    <div class="page-tabs">
+        <button class="page-tab active" onclick="switchPage('orders', this)">📋 Orders</button>
+        <button class="page-tab" onclick="switchPage('stock', this)">🗝️ Stock Management</button>
+        <button class="page-tab" onclick="switchPage('products', this)">🖼️ Products</button>
+        <button class="page-tab" onclick="switchPage('analytics', this)">📊 Analytics</button>
+    </div>
+
+    <!-- Orders Panel -->
+    <div class="panel active" id="panelOrders">
+        <div class="panel-header">
+            <div>
+                <h2>Order Management</h2>
+                <p>Verify FIB payments and deliver keys to customers</p>
+            </div>
+            <button class="refresh-btn" onclick="loadOrders()">↻ Refresh</button>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-card pending">
+                <div class="stat-num" id="statPending">0</div>
+                <div class="stat-label">Pending</div>
+            </div>
+            <div class="stat-card delivered">
+                <div class="stat-num" id="statDelivered">0</div>
+                <div class="stat-label">Delivered</div>
+            </div>
+            <div class="stat-card rejected">
+                <div class="stat-num" id="statRejected">0</div>
+                <div class="stat-label">Rejected</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" id="statTotal">0</div>
+                <div class="stat-label">Total Orders</div>
+            </div>
+        </div>
+
+        <div class="filter-tabs">
+            <button class="tab active" onclick="setFilter('all', this)">All</button>
+            <button class="tab" onclick="setFilter('pending', this)">Pending</button>
+            <button class="tab" onclick="setFilter('delivered', this)">Delivered</button>
+            <button class="tab" onclick="setFilter('rejected', this)">Rejected</button>
+        </div>
+
+        <div class="orders-container" id="ordersContainer">
+            <div class="empty-state">
+                <div class="icon">📋</div>
+                <p>Loading orders...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Panel -->
+    <div class="panel" id="panelStock">
+        <div class="panel-header">
+            <div>
+                <h2>Stock Management</h2>
+                <p>Add or remove keys from your inventory</p>
+            </div>
+            <button class="refresh-btn" onclick="loadStock()">↻ Refresh</button>
+        </div>
+
+        <div class="stock-grid" id="stockGrid">
+            <div style="color:#aaa; grid-column:1/-1; padding:40px; text-align:center;">Loading inventory...</div>
+        </div>
+    </div>
+
+    <!-- Analytics Panel -->
+    <div class="panel" id="panelAnalytics">
+        <div class="panel-header">
+            <div>
+                <h2>Website Traffic</h2>
+                <p>Page views and unique visitors across your storefront and Track-Order pages.</p>
+            </div>
+            <button class="refresh-btn" onclick="loadAnalytics()">↻ Refresh</button>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-num" id="analyticsTotalViews">—</div>
+                <div class="stat-label">Total Page Views</div>
+            </div>
+            <div class="stat-card delivered">
+                <div class="stat-num" id="analyticsUniqueVisitors">—</div>
+                <div class="stat-label">Unique Visitors</div>
+            </div>
+            <div class="stat-card pending">
+                <div class="stat-num" id="analyticsToday">—</div>
+                <div class="stat-label">Views Today</div>
+            </div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:24px;">
+            <div style="font-size:16px; font-weight:600; margin-bottom:16px;">Last 7 Days</div>
+            <div id="analyticsChart" style="display:flex; align-items:flex-end; gap:10px; height:180px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.08);">
+                <div style="color:#aaa; align-self:center; width:100%; text-align:center;">Loading…</div>
+            </div>
+            <div style="font-size:12px; color:#888; margin-top:10px;">Dates are UTC. Each visit ping from the storefront or Track-Order page is counted as one view; unique visitors are deduped per browser.</div>
+        </div>
+    </div>
+
+    <!-- Products Panel -->
+    <div class="panel" id="panelProducts">
+        <div class="panel-header">
+            <div>
+                <h2>Product Images</h2>
+                <p>Set the image shown on the storefront for each key tier. Changes appear instantly on the live site.</p>
+            </div>
+            <button class="refresh-btn" onclick="loadProducts()">↻ Refresh</button>
+        </div>
+
+        <div class="products-grid" id="productsGrid">
+            <div style="color:#aaa; grid-column:1/-1; padding:40px; text-align:center;">Loading products...</div>
+        </div>
+    </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    let adminToken = sessionStorage.getItem('adminToken') || '';
+    let allOrders = [];
+    let currentFilter = 'all';
+    let autoRefreshInterval = null;
+
+    const PRODUCT_TYPES = [
+        { key: 'one_day',     label: '1 Day Key' },
+        { key: 'seven_day',   label: '7 Days Key' },
+        { key: 'thirty_day',  label: '30 Days Key' },
+    ];
+
+    function fmtPrice(n) {
+        const num = Number(n);
+        if (!Number.isFinite(num) || num <= 0) return '$0';
+        return Number.isInteger(num) ? '$' + num : '$' + num.toFixed(2);
+    }
+
+    function priceOf(key) {
+        const p = productsData && productsData[key];
+        return (p && Number(p.price)) || 0;
+    }
+
+    if (adminToken) {
+        showPanel();
+        loadOrders();
+    }
+
+    async function doLogin() {
+        const password = document.getElementById('adminPassword').value;
+        document.getElementById('loginError').textContent = '';
+
+        if (!password) {
+            document.getElementById('loginError').textContent = 'Please enter your password.';
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
             });
-            const empty = document.getElementById('cardsEmpty');
-            if (empty) empty.classList.toggle('show', visible === 0);
-        }
 
-        async function loadStock() {
-            try {
-                const res = await fetch('/api/stock', { cache: 'no-store' });
-                if (!res.ok) return;
-                applyStock(await res.json());
-            } catch {}
-        }
+            const data = await res.json();
 
-        // ---- Products (image + price, live updates from admin panel) ----
-        let currentProducts = {};
-
-        function formatPrice(n) {
-            const num = Number(n);
-            if (!Number.isFinite(num) || num <= 0) return '$0';
-            return Number.isInteger(num) ? '$' + num : '$' + num.toFixed(2);
-        }
-
-        function applyProductPrice(type, price) {
-            const el = document.getElementById('price-' + type);
-            if (el) el.innerText = formatPrice(price);
-        }
-
-        function applyProductImage(type, imageUrl) {
-            const wrap = document.getElementById('imgwrap-' + type);
-            const img = document.getElementById('img-' + type);
-            if (!wrap || !img) return;
-            if (imageUrl) {
-                img.onerror = () => { wrap.classList.remove('has-image'); };
-                img.onload = () => { wrap.classList.add('has-image'); };
-                img.src = imageUrl;
+            if (res.ok) {
+                adminToken = data.token;
+                sessionStorage.setItem('adminToken', adminToken);
+                showPanel();
+                loadOrders();
             } else {
-                img.removeAttribute('src');
-                wrap.classList.remove('has-image');
+                document.getElementById('loginError').textContent = 'Wrong password. Try again.';
             }
+        } catch {
+            document.getElementById('loginError').textContent = 'Server error. Is the server running?';
         }
+    }
 
-        function applyProducts(products) {
-            currentProducts = products || {};
-            TIERS.forEach(t => {
-                const p = (products && products[t]) || {};
-                applyProductImage(t, p.imageUrl || '');
-                applyProductPrice(t, p.price);
+    function showPanel() {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminWrapper').style.display = 'block';
+        document.getElementById('adminBadge').style.display = 'inline';
+        document.getElementById('logoutBtn').style.display = 'inline-block';
+        autoRefreshInterval = setInterval(loadOrders, 15000);
+    }
+
+    function logout() {
+        adminToken = '';
+        sessionStorage.removeItem('adminToken');
+        clearInterval(autoRefreshInterval);
+        document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('adminWrapper').style.display = 'none';
+        document.getElementById('adminBadge').style.display = 'none';
+        document.getElementById('logoutBtn').style.display = 'none';
+        document.getElementById('adminPassword').value = '';
+    }
+
+    function switchPage(page, btn) {
+        document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('panel' + page.charAt(0).toUpperCase() + page.slice(1)).classList.add('active');
+        if (page === 'stock') loadStock();
+        if (page === 'products') loadProducts();
+        if (page === 'analytics') loadAnalytics();
+    }
+
+    /* ===== ANALYTICS ===== */
+
+    async function loadAnalytics() {
+        try {
+            const res = await fetch('/api/admin/analytics', {
+                headers: { 'x-admin-token': adminToken }
             });
+            if (res.status === 401) { logout(); return; }
+            if (!res.ok) { showToast('Could not load analytics.', 'error'); return; }
+            const data = await res.json();
+            document.getElementById('analyticsTotalViews').textContent = (data.totalViews || 0).toLocaleString();
+            document.getElementById('analyticsUniqueVisitors').textContent = (data.uniqueVisitors || 0).toLocaleString();
+            document.getElementById('analyticsToday').textContent = (data.viewsToday || 0).toLocaleString();
+            renderAnalyticsChart(data.last7Days || []);
+        } catch {
+            showToast('Could not load analytics.', 'error');
+        }
+    }
+
+    function renderAnalyticsChart(days) {
+        const chart = document.getElementById('analyticsChart');
+        if (!days.length) { chart.innerHTML = '<div style="color:#aaa; align-self:center; width:100%; text-align:center;">No data yet.</div>'; return; }
+        const max = Math.max(1, ...days.map(d => d.count));
+        chart.innerHTML = days.map(d => {
+            const heightPct = Math.round((d.count / max) * 100);
+            const label = d.date.slice(5);
+            return `
+                <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; min-width:0;">
+                    <div style="font-size:12px; color:#fff; font-weight:600;">${d.count}</div>
+                    <div style="width:100%; background:linear-gradient(180deg, #00e5ff 0%, rgba(0,229,255,0.4) 100%); border-radius:6px 6px 0 0; height:${Math.max(2, heightPct)}%; min-height:4px; transition:height .3s;"></div>
+                    <div style="font-size:11px; color:#aaa;">${escHtml(label)}</div>
+                </div>`;
+        }).join('');
+    }
+
+    /* ===== ORDERS ===== */
+
+    async function loadOrders() {
+        try {
+            const res = await fetch('/api/admin/orders', {
+                headers: { 'x-admin-token': adminToken }
+            });
+
+            if (res.status === 401) { logout(); return; }
+            allOrders = await res.json();
+            updateStats();
+            renderOrders();
+        } catch {
+            showToast('Could not load orders.', 'error');
+        }
+    }
+
+    function updateStats() {
+        document.getElementById('statPending').textContent   = allOrders.filter(o => o.status === 'pending').length;
+        document.getElementById('statDelivered').textContent = allOrders.filter(o => o.status === 'delivered').length;
+        document.getElementById('statRejected').textContent  = allOrders.filter(o => o.status === 'rejected').length;
+        document.getElementById('statTotal').textContent     = allOrders.length;
+    }
+
+    function setFilter(filter, btn) {
+        currentFilter = filter;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        renderOrders();
+    }
+
+    function renderOrders() {
+        const filtered = currentFilter === 'all'
+            ? allOrders
+            : allOrders.filter(o => o.status === currentFilter);
+
+        const container = document.getElementById('ordersContainer');
+
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">${currentFilter === 'pending' ? '⏳' : '📋'}</div>
+                    <p>${currentFilter === 'pending' ? 'No pending orders — all caught up!' : 'No orders here yet.'}</p>
+                </div>`;
+            return;
         }
 
-        async function loadProducts() {
-            try {
-                const res = await fetch('/api/products', { cache: 'no-store' });
-                if (!res.ok) return;
-                applyProducts(await res.json());
-            } catch {}
-        }
+        container.innerHTML = filtered.map(order => {
+            const waNum = (order.whatsapp || '').replace(/[^0-9+]/g, '');
+            const waMsg = order.key
+                ? encodeURIComponent(`Hello! Your kurdHS payment has been confirmed ✅\n\nYour ${order.label} key is:\n\n${order.key}\n\nThank you for your purchase! — kurdHS`)
+                : '';
+            const waLink = waNum ? `https://wa.me/${waNum.replace('+','')}?text=${waMsg}` : '';
 
-        function subscribeStorefront() {
-            try {
-                const es = new EventSource('/api/products/stream');
-                es.onmessage = (ev) => {
-                    try {
-                        const msg = JSON.parse(ev.data);
-                        if (!msg) return;
-                        if (msg.type === 'connected') {
-                            if (msg.stock) applyStock(msg.stock);
-                            if (msg.products) applyProducts(msg.products);
-                        } else if (msg.type === 'products-updated' && msg.products) {
-                            applyProducts(msg.products);
-                        } else if (msg.type === 'stock-updated' && msg.stock) {
-                            applyStock(msg.stock);
-                        }
-                    } catch {}
-                };
-                es.onerror = () => { /* browser auto-reconnects */ };
-            } catch {}
-        }
+            return `
+            <div class="order-row" id="order-${order.id}">
+                <div class="order-info">
+                    <div class="order-top">
+                        <span class="order-email">${escHtml(order.email)}</span>
+                        <span class="status-badge status-${order.status}">${order.status.toUpperCase()}</span>
+                    </div>
+                    <div class="order-meta">
+                        <span style="color:#00e5ff;font-weight:600;">${escHtml(order.label)}</span> &nbsp;·&nbsp; ${escHtml(order.price)}<br>
+                        ${order.whatsapp ? `WhatsApp: <span>${escHtml(order.whatsapp)}</span><br>` : ''}
+                        FIB Trans ID: <span>${escHtml(order.transactionId)}</span><br>
+                        Submitted: <span>${formatDate(order.createdAt)}</span>
+                        ${order.deliveredAt ? `<br>Delivered: <span>${formatDate(order.deliveredAt)}</span>` : ''}
+                        ${order.rejectedAt ? `<br>Rejected: <span>${formatDate(order.rejectedAt)}</span>` : ''}
+                    </div>
+                    ${order.key ? `<div class="order-key">${escHtml(order.key)}</div>` : ''}
+                </div>
+                <div class="order-actions">
+                    ${order.status === 'pending' ? `
+                        <button class="btn btn-success btn-sm" onclick="deliverOrder('${order.id}')">✓ Confirm & Deliver</button>
+                        <button class="btn btn-danger btn-sm" onclick="rejectOrder('${order.id}')">✕ Reject</button>
+                    ` : ''}
+                    ${order.status === 'delivered' && waLink ? `
+                        <a href="${waLink}" target="_blank" class="btn btn-wa btn-sm">
+                            <span style="font-size:15px;">📲</span> Send via WhatsApp
+                        </a>
+                    ` : ''}
+                </div>
+            </div>`;
+        }).join('');
+    }
 
-        function trackVisit() {
-            try {
-                fetch('/api/analytics/track', { method: 'POST', credentials: 'same-origin', keepalive: true }).catch(() => {});
-            } catch {}
-        }
+    async function deliverOrder(orderId) {
+        const btn = document.querySelector(`#order-${orderId} .btn-success`);
+        if (btn) { btn.textContent = 'Delivering...'; btn.disabled = true; }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            loadStock();
-            loadProducts();
-            subscribeStorefront();
-            trackVisit();
-        });
+        try {
+            const res = await fetch(`/api/admin/deliver/${orderId}`, {
+                method: 'POST',
+                headers: { 'x-admin-token': adminToken }
+            });
 
-        // 1. Handle Login
-        function simulateLogin() {
-            const email = document.getElementById('emailInput').value;
-            const password = document.getElementById('passwordInput').value;
+            const data = await res.json();
 
-            if (email === "" || password === "") {
-                alert("Please enter both email and password.");
-                return;
+            if (res.ok) {
+                showToast(data.message, 'success');
+                await loadOrders();
+            } else {
+                showToast(data.error || 'Failed to deliver key.', 'error');
+                if (btn) { btn.textContent = '✉ Confirm & Deliver'; btn.disabled = false; }
             }
-
-            loggedInEmail = email;
-            document.getElementById('loginBox').style.display = 'none';
-            document.getElementById('storeSection').style.display = 'block';
-            refreshStock();
+        } catch {
+            showToast('Network error. Try again.', 'error');
+            if (btn) { btn.textContent = '✉ Confirm & Deliver'; btn.disabled = false; }
         }
+    }
 
-        // 2. Get Live Stock Numbers (also drives card visibility)
-        async function refreshStock() {
-            await loadStock();
-        }
+    async function rejectOrder(orderId) {
+        if (!confirm('Reject this order? The customer will NOT receive a key.')) return;
 
-        // 3. Open the Payment Pop-up
-        function openPayment(type) {
-            pendingKeyType = type;
-            const p = currentProducts[type];
-            document.getElementById('displayPrice').innerText = formatPrice(p && p.price);
-            document.getElementById('paymentModal').style.display = 'flex';
-        }
+        try {
+            const res = await fetch(`/api/admin/reject/${orderId}`, {
+                method: 'POST',
+                headers: { 'x-admin-token': adminToken }
+            });
 
-        // 4. Close the Payment Pop-up
-        function closePayment() {
-            document.getElementById('paymentModal').style.display = 'none';
-        }
-
-        // 5. Submit the FIB Order
-        async function submitManualPayment() {
-            const transId = document.getElementById('transactionId').value.trim();
-            const whatsapp = document.getElementById('whatsappNumber').value.trim();
-
-            if (!transId) {
-                alert("Please enter the FIB Transaction ID so we can verify your payment.");
-                return;
+            if (res.ok) {
+                showToast('Order rejected.', 'error');
+                await loadOrders();
             }
-            if (!whatsapp) {
-                alert("Please enter your WhatsApp number so we can deliver your key.");
-                return;
-            }
-
-            const btn = event.target;
-            btn.innerText = "Submitting Order...";
-            btn.style.opacity = "0.5";
-            btn.disabled = true;
-
-            try {
-                const res = await fetch('/api/manual-order', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        type: pendingKeyType,
-                        email: loggedInEmail,
-                        transactionId: transId,
-                        whatsapp: whatsapp
-                    })
-                });
-
-                const result = await res.json();
-
-                closePayment();
-                alert(result.message + "\n\nYou can check your order status at any time by clicking 'Track My Order' in the top menu.");
-
-            } catch (err) {
-                alert("Server error. Please try again.");
-            }
-
-            btn.innerText = "Submit Payment Proof";
-            btn.style.opacity = "1";
-            btn.disabled = false;
-            document.getElementById('transactionId').value = "";
-            document.getElementById('whatsappNumber').value = "";
+        } catch {
+            showToast('Network error.', 'error');
         }
-    </script>
+    }
 
+    /* ===== STOCK ===== */
+
+    let stockData = {};
+
+    async function loadStock() {
+        try {
+            const [stockRes, productsRes] = await Promise.all([
+                fetch('/api/admin/stock', { headers: { 'x-admin-token': adminToken } }),
+                fetch('/api/products'),
+            ]);
+
+            if (stockRes.status === 401) { logout(); return; }
+            stockData = await stockRes.json();
+            if (productsRes.ok) productsData = await productsRes.json();
+            renderStock();
+        } catch {
+            showToast('Could not load stock.', 'error');
+        }
+    }
+
+    function renderStock() {
+        const grid = document.getElementById('stockGrid');
+
+        grid.innerHTML = PRODUCT_TYPES.map(pt => {
+            const keys = stockData[pt.key] || [];
+            const count = keys.length;
+            const badgeClass = count === 0 ? 'empty' : count <= 3 ? 'low' : '';
+
+            return `
+            <div class="stock-card">
+                <div class="stock-card-header">
+                    <div>
+                        <div class="stock-card-title">${pt.label}</div>
+                        <div style="color:#aaa;font-size:13px;margin-top:2px;">${fmtPrice(priceOf(pt.key))} per key</div>
+                    </div>
+                    <span class="stock-count-badge ${badgeClass}">${count} key${count !== 1 ? 's' : ''}</span>
+                </div>
+
+                <div class="stock-add-area">
+                    <label>Add Keys (one per line)</label>
+                    <textarea id="textarea-${pt.key}" placeholder="KEY-XXXX-XXXX&#10;KEY-YYYY-YYYY&#10;..."></textarea>
+                    <div class="add-row">
+                        <button class="btn btn-success" onclick="addKeys('${pt.key}')">+ Add Keys</button>
+                        <span id="add-feedback-${pt.key}" style="font-size:13px;color:#aaa;align-self:center;"></span>
+                    </div>
+                </div>
+
+                <div class="keys-list-toggle" onclick="toggleKeysList('${pt.key}')">
+                    <span>Current Keys in Stock</span>
+                    <span id="toggle-icon-${pt.key}">▶</span>
+                </div>
+
+                <div class="keys-list-area keys-hidden" id="keysList-${pt.key}">
+                    ${count === 0
+                        ? `<p style="color:#666;font-size:13px;padding:10px 0;">No keys in stock.</p>`
+                        : keys.map(k => `
+                            <div class="key-item">
+                                <code>${escHtml(k)}</code>
+                                <button class="del-btn" onclick="removeKey('${pt.key}', '${escHtml(k)}', this)">✕</button>
+                            </div>
+                        `).join('')
+                    }
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function toggleKeysList(type) {
+        const el = document.getElementById('keysList-' + type);
+        const icon = document.getElementById('toggle-icon-' + type);
+        if (el.classList.contains('keys-hidden')) {
+            el.classList.remove('keys-hidden');
+            icon.textContent = '▼';
+        } else {
+            el.classList.add('keys-hidden');
+            icon.textContent = '▶';
+        }
+    }
+
+    async function addKeys(type) {
+        const textarea = document.getElementById('textarea-' + type);
+        const feedback = document.getElementById('add-feedback-' + type);
+        const raw = textarea.value.trim();
+
+        if (!raw) {
+            feedback.textContent = 'Please enter at least one key.';
+            feedback.style.color = '#ef4444';
+            return;
+        }
+
+        const keys = raw.split('\n').map(k => k.trim()).filter(k => k.length > 0);
+
+        try {
+            const res = await fetch('/api/admin/stock/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+                body: JSON.stringify({ type, keys })
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                textarea.value = '';
+                let msg = `Added ${data.added} key${data.added !== 1 ? 's' : ''}.`;
+                if (data.duplicatesSkipped > 0) msg += ` ${data.duplicatesSkipped} duplicate(s) skipped.`;
+                feedback.textContent = msg;
+                feedback.style.color = '#22c55e';
+                showToast(msg, 'success');
+                await loadStock();
+            } else {
+                feedback.textContent = data.error || 'Failed to add keys.';
+                feedback.style.color = '#ef4444';
+            }
+        } catch {
+            feedback.textContent = 'Network error.';
+            feedback.style.color = '#ef4444';
+        }
+
+        setTimeout(() => { feedback.textContent = ''; }, 5000);
+    }
+
+    async function removeKey(type, key, btnEl) {
+        if (!confirm(`Remove key "${key}" from ${type.replace('_', ' ')} stock?`)) return;
+
+        btnEl.disabled = true;
+        btnEl.textContent = '...';
+
+        try {
+            const res = await fetch('/api/admin/stock/remove', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+                body: JSON.stringify({ type, key })
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                showToast('Key removed.', '');
+                await loadStock();
+            } else {
+                showToast(data.error || 'Failed to remove key.', 'error');
+                btnEl.disabled = false;
+                btnEl.textContent = '✕';
+            }
+        } catch {
+            showToast('Network error.', 'error');
+            btnEl.disabled = false;
+            btnEl.textContent = '✕';
+        }
+    }
+
+    /* ===== PRODUCTS (IMAGES) ===== */
+
+    let productsData = {};
+
+    async function loadProducts() {
+        try {
+            const res = await fetch('/api/products');
+            productsData = await res.json();
+            renderProducts();
+        } catch {
+            showToast('Could not load products.', 'error');
+        }
+    }
+
+    function renderProducts() {
+        const grid = document.getElementById('productsGrid');
+        grid.innerHTML = PRODUCT_TYPES.map(pt => {
+            const p = productsData[pt.key] || {};
+            const url = p.imageUrl || '';
+            const price = Number(p.price) || 0;
+            const previewHtml = url
+                ? `<img src="${escHtml(url)}" alt="${escHtml(pt.label)}" onerror="this.parentNode.innerHTML='Image failed to load';">`
+                : 'No image set';
+            return `
+            <div class="product-card">
+                <div class="product-card-title">${pt.label}</div>
+                <div class="product-card-sub">${fmtPrice(price)} per key</div>
+
+                <div class="product-image-preview" id="preview-${pt.key}">${previewHtml}</div>
+
+                <label>Price (USD)</label>
+                <div class="url-row">
+                    <input type="number" id="price-${pt.key}" min="0.01" step="0.01" max="100000" placeholder="e.g. 5" value="${escHtml(String(price))}">
+                    <button class="btn btn-primary" onclick="savePrice('${pt.key}')">Save</button>
+                </div>
+
+                <label>Image URL</label>
+                <div class="url-row">
+                    <input type="text" id="url-${pt.key}" placeholder="https://..." value="${escHtml(url)}">
+                    <button class="btn btn-primary" onclick="saveImageUrl('${pt.key}')">Save</button>
+                </div>
+
+                <label>Or Upload File</label>
+                <div class="upload-row">
+                    <input type="file" id="file-${pt.key}" accept="image/png,image/jpeg,image/webp,image/gif">
+                    <button class="btn btn-success" onclick="uploadImage('${pt.key}')">Upload</button>
+                </div>
+
+                <div class="feedback" id="prod-feedback-${pt.key}"></div>
+            </div>`;
+        }).join('');
+    }
+
+    async function savePrice(type) {
+        const input = document.getElementById('price-' + type);
+        const raw = input.value.trim();
+        const num = Number(raw);
+        if (!raw || !Number.isFinite(num) || num <= 0) {
+            setProductFeedback(type, 'Enter a positive price (e.g. 5 or 4.99).', 'error');
+            return;
+        }
+        if (num > 100000) {
+            setProductFeedback(type, 'Price too high (max 100000).', 'error');
+            return;
+        }
+        setProductFeedback(type, 'Saving...', '');
+        try {
+            const res = await fetch('/api/admin/products/price', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+                body: JSON.stringify({ type, price: num })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                productsData = data.products;
+                renderProducts();
+                showToast('Price saved. Storefront updated.', 'success');
+            } else {
+                setProductFeedback(type, data.error || 'Failed to save.', 'error');
+            }
+        } catch {
+            setProductFeedback(type, 'Network error.', 'error');
+        }
+    }
+
+    function setProductFeedback(type, msg, kind) {
+        const el = document.getElementById('prod-feedback-' + type);
+        if (!el) return;
+        el.textContent = msg;
+        el.className = 'feedback' + (kind ? ' ' + kind : '');
+        if (msg) setTimeout(() => { if (el.textContent === msg) { el.textContent = ''; el.className = 'feedback'; } }, 5000);
+    }
+
+    async function saveImageUrl(type) {
+        const input = document.getElementById('url-' + type);
+        const imageUrl = input.value.trim();
+        setProductFeedback(type, 'Saving...', '');
+        try {
+            const res = await fetch('/api/admin/products/image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+                body: JSON.stringify({ type, imageUrl })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                productsData = data.products;
+                renderProducts();
+                showToast('Image URL saved. Storefront updated.', 'success');
+            } else {
+                setProductFeedback(type, data.error || 'Failed to save.', 'error');
+            }
+        } catch {
+            setProductFeedback(type, 'Network error.', 'error');
+        }
+    }
+
+    async function uploadImage(type) {
+        const fileInput = document.getElementById('file-' + type);
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) {
+            setProductFeedback(type, 'Choose a file first.', 'error');
+            return;
+        }
+        if (file.size > 8 * 1024 * 1024) {
+            setProductFeedback(type, 'File too large (max 8 MB).', 'error');
+            return;
+        }
+        setProductFeedback(type, 'Uploading...', '');
+        try {
+            const dataUrl = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(new Error('read failed'));
+                reader.readAsDataURL(file);
+            });
+            const res = await fetch('/api/admin/products/upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+                body: JSON.stringify({ type, filename: file.name, dataUrl })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                productsData = data.products;
+                renderProducts();
+                fileInput.value = '';
+                showToast('Image uploaded. Storefront updated.', 'success');
+            } else {
+                setProductFeedback(type, data.error || 'Upload failed.', 'error');
+            }
+        } catch {
+            setProductFeedback(type, 'Upload error.', 'error');
+        }
+    }
+
+    /* ===== UTILITIES ===== */
+
+    function showToast(message, type = '') {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.className = `toast ${type} show`;
+        setTimeout(() => { toast.className = 'toast'; }, 4500);
+    }
+
+    function formatDate(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function escHtml(str) {
+        return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+</script>
 </body>
 </html>
