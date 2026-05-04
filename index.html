@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>kurdHS - Digital Keys</title>
+    <style>
+        /* --- The Design / CSS --- */
+        body {
+            background: #0f172a;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .bg-video {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        .bg-overlay {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(15,23,42,0.55), rgba(30,58,138,0.45));
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .bg-video { display: none; }
+            body { background: linear-gradient(135deg, #0f172a, #1e3a8a); }
+        }
+
+        /* Navbar */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 50px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .logo {
+            color: #00e5ff;
+            font-weight: bold;
+            font-size: 24px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+            .nav-links div {
+                color: white;
+                cursor: pointer;
+                transition: color 0.2s;
+            }
+
+                .nav-links div:hover {
+                    color: #00e5ff;
+                }
+
+        /* Main Container */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Login Box */
+        .login-box {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 60px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+            .login-box h2 {
+                color: #00e5ff;
+                margin-top: 0;
+            }
+
+            .login-box p {
+                color: #ccc;
+                margin-bottom: 20px;
+            }
+
+        /* Inputs & Buttons */
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.2);
+            color: white;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+            button:hover {
+                opacity: 0.9;
+            }
+
+        .btn-primary {
+            background: #00e5ff;
+            color: #000;
+            margin-bottom: 10px;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid #00e5ff;
+            color: #00e5ff;
+        }
+
+        .btn-cancel {
+            background: #ef4444;
+            color: white;
+            margin-top: 10px;
+        }
+
+        /* Store Section - HIDDEN BY DEFAULT */
+        .store-section {
+            display: none;
+            text-align: center;
+        }
+
+            .store-section h2 {
+                font-size: 32px;
+                margin-bottom: 5px;
+            }
+
+            .store-section > p {
+                color: #ccc;
+            }
+
+        /* Cards */
+        .cards {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            flex: 1;
+            min-width: 200px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+            .card h3 {
+                margin: 0;
+                font-size: 20px;
+            }
+
+        .product-img-wrap {
+            width: 100%;
+            height: 160px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 16px;
+            background: rgba(0,0,0,0.25);
+            display: none;
+        }
+
+        .product-img-wrap.has-image { display: block; }
+
+        .product-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: opacity 0.3s ease;
+        }
+
+        .price {
+            color: #00e5ff;
+            font-size: 36px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .stock-text {
+            color: #aaa;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .card.hidden { display: none; }
+
+        .cards-empty {
+            display: none;
+            width: 100%;
+            text-align: center;
+            color: #aaa;
+            background: rgba(255,255,255,0.04);
+            border: 1px dashed rgba(255,255,255,0.12);
+            border-radius: 15px;
+            padding: 50px 20px;
+            font-size: 15px;
+        }
+
+        .cards-empty.show { display: block; }
+        .cards-empty .icon { font-size: 36px; display: block; margin-bottom: 10px; }
+
+        /* --- Payment Modal (Pop-up) --- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .payment-box {
+            background: #0f172a;
+            padding: 30px;
+            border-radius: 15px;
+            width: 350px;
+            text-align: center;
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            box-shadow: 0 10px 30px rgba(0,229,255,0.2);
+        }
+
+            .payment-box h3 {
+                color: #00e5ff;
+                margin-top: 0;
+            }
+    </style>
+</head>
+<body>
+
+    <!-- Background Video -->
+    <video class="bg-video" autoplay muted loop playsinline preload="auto" poster="/videos/bg-poster.jpg?v=2" aria-hidden="true" tabindex="-1" disablepictureinpicture>
+        <source src="/videos/bg.mp4?v=2" type="video/mp4">
+    </video>
+    <div class="bg-overlay" aria-hidden="true"></div>
+
+    <!-- Top Navigation -->
+    <div class="navbar">
+        <div class="logo">kurdHS</div>
+        <div class="nav-links">
+            <div>Home</div>
+            <div onclick="window.location.href='/track'" style="color:#00e5ff;">Track My Order</div>
+            <div>Contact</div>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <!-- Login Section -->
+        <div class="login-box" id="loginBox">
+            <h2>kurdHS</h2>
+            <p>Secure Digital Key Access</p>
+            <input type="email" id="emailInput" placeholder="Email">
+            <input type="password" id="passwordInput" placeholder="Password">
+            <button class="btn-primary" onclick="simulateLogin()">Login</button>
+            <button class="btn-secondary" onclick="simulateLogin()">Create & Verify Account</button>
+        </div>
+
+        <!-- Digital Keys Store Section -->
+        <div class="store-section" id="storeSection">
+            <h2>Digital Keys Store</h2>
+            <p>Welcome back! Browse all our available digital products below.</p>
+
+            <div class="cards" id="cardsContainer">
+
+                <!-- 1 Day Key Card -->
+                <div class="card hidden" id="card-one_day">
+                    <div class="product-img-wrap" id="imgwrap-one_day"><img class="product-img" id="img-one_day" alt="1 Day Key"></div>
+                    <h3>1 Day Key</h3>
+                    <div class="price" id="price-one_day">$5</div>
+                    <p class="stock-text">Keys Available: <span id="stock-one_day">..</span></p>
+                    <button class="btn-primary" onclick="openPayment('one_day')">Purchase Now</button>
+                </div>
+
+                <!-- 7 Days Key Card -->
+                <div class="card hidden" id="card-seven_day">
+                    <div class="product-img-wrap" id="imgwrap-seven_day"><img class="product-img" id="img-seven_day" alt="7 Days Key"></div>
+                    <h3>7 Days Key</h3>
+                    <div class="price" id="price-seven_day">$20</div>
+                    <p class="stock-text">Keys Available: <span id="stock-seven_day">..</span></p>
+                    <button class="btn-primary" onclick="openPayment('seven_day')">Purchase Now</button>
+                </div>
+
+                <!-- 30 Days Key Card -->
+                <div class="card hidden" id="card-thirty_day">
+                    <div class="product-img-wrap" id="imgwrap-thirty_day"><img class="product-img" id="img-thirty_day" alt="30 Days Key"></div>
+                    <h3>30 Days Key</h3>
+                    <div class="price" id="price-thirty_day">$60</div>
+                    <p class="stock-text">Keys Available: <span id="stock-thirty_day">..</span></p>
+                    <button class="btn-primary" onclick="openPayment('thirty_day')">Purchase Now</button>
+                </div>
+
+                <div class="cards-empty" id="cardsEmpty">
+                    <span class="icon">📦</span>
+                    No products are available right now. Please check back soon.
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- --- Manual Payment Pop-up (FIB) --- -->
+    <div class="modal-overlay" id="paymentModal">
+        <div class="payment-box">
+            <h3>Pay with FIB</h3>
+            <p>Total amount: <strong style="color: #00e5ff; font-size: 20px;" id="displayPrice">$0</strong></p>
+
+            <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: left;">
+                <p style="margin: 0 0 10px 0; font-size: 14px; color: #ccc;">1. Open your First Iraqi Bank (FIB) app and send the exact amount to:</p>
+                <p style="margin: 0 0 15px 0; font-size: 24px; font-weight: bold; color: white; text-align: center; letter-spacing: 2px;">
+                    0750 912 6370
+                </p>
+                <p style="margin: 0 0 5px 0; font-size: 14px; color: #ccc;">2. Enter the Transaction ID from your FIB receipt below:</p>
+            </div>
+
+            <input type="text" id="transactionId" placeholder="e.g., FIB-987654321">
+
+            <div style="margin-bottom:5px; text-align:left;">
+                <label style="color:#ccc; font-size:13px; margin-bottom:6px; display:block;">3. Enter your WhatsApp number to receive your key &amp; track your order:</label>
+                <input type="text" id="whatsappNumber" placeholder="e.g., +9647501234567" style="margin-bottom:0;">
+            </div>
+
+            <button class="btn-primary" style="margin-top:14px;" onclick="submitManualPayment()">Submit Payment Proof</button>
+            <button class="btn-cancel" onclick="closePayment()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- --- The JavaScript Logic --- -->
+    <script>
+        let loggedInEmail = "";
+        let pendingKeyType = "";
+
+        // ---- Stock visibility (live updates from admin panel) ----
+        const TIERS = ['one_day', 'seven_day', 'thirty_day'];
+
+        function applyStock(stock) {
+            if (!stock) return;
+            let visible = 0;
+            TIERS.forEach(t => {
+                const count = Number(stock[t]) || 0;
+                const card = document.getElementById('card-' + t);
+                const span = document.getElementById('stock-' + t);
+                if (span) span.innerText = count;
+                if (card) {
+                    if (count > 0) {
+                        card.classList.remove('hidden');
+                        visible++;
+                    } else {
+                        card.classList.add('hidden');
+                    }
+                }
+            });
+            const empty = document.getElementById('cardsEmpty');
+            if (empty) empty.classList.toggle('show', visible === 0);
+        }
+
+        async function loadStock() {
+            try {
+                const res = await fetch('/api/stock', { cache: 'no-store' });
+                if (!res.ok) return;
+                applyStock(await res.json());
+            } catch {}
+        }
+
+        // ---- Products (image + price, live updates from admin panel) ----
+        let currentProducts = {};
+
+        function formatPrice(n) {
+            const num = Number(n);
+            if (!Number.isFinite(num) || num <= 0) return '$0';
+            return Number.isInteger(num) ? '$' + num : '$' + num.toFixed(2);
+        }
+
+        function applyProductPrice(type, price) {
+            const el = document.getElementById('price-' + type);
+            if (el) el.innerText = formatPrice(price);
+        }
+
+        function applyProductImage(type, imageUrl) {
+            const wrap = document.getElementById('imgwrap-' + type);
+            const img = document.getElementById('img-' + type);
+            if (!wrap || !img) return;
+            if (imageUrl) {
+                img.onerror = () => { wrap.classList.remove('has-image'); };
+                img.onload = () => { wrap.classList.add('has-image'); };
+                img.src = imageUrl;
+            } else {
+                img.removeAttribute('src');
+                wrap.classList.remove('has-image');
+            }
+        }
+
+        function applyProducts(products) {
+            currentProducts = products || {};
+            TIERS.forEach(t => {
+                const p = (products && products[t]) || {};
+                applyProductImage(t, p.imageUrl || '');
+                applyProductPrice(t, p.price);
+            });
+        }
+
+        async function loadProducts() {
+            try {
+                const res = await fetch('/api/products', { cache: 'no-store' });
+                if (!res.ok) return;
+                applyProducts(await res.json());
+            } catch {}
+        }
+
+        function subscribeStorefront() {
+            try {
+                const es = new EventSource('/api/products/stream');
+                es.onmessage = (ev) => {
+                    try {
+                        const msg = JSON.parse(ev.data);
+                        if (!msg) return;
+                        if (msg.type === 'connected') {
+                            if (msg.stock) applyStock(msg.stock);
+                            if (msg.products) applyProducts(msg.products);
+                        } else if (msg.type === 'products-updated' && msg.products) {
+                            applyProducts(msg.products);
+                        } else if (msg.type === 'stock-updated' && msg.stock) {
+                            applyStock(msg.stock);
+                        }
+                    } catch {}
+                };
+                es.onerror = () => { /* browser auto-reconnects */ };
+            } catch {}
+        }
+
+        function trackVisit() {
+            try {
+                fetch('/api/analytics/track', { method: 'POST', credentials: 'same-origin', keepalive: true }).catch(() => {});
+            } catch {}
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStock();
+            loadProducts();
+            subscribeStorefront();
+            trackVisit();
+        });
+
+        // 1. Handle Login
+        function simulateLogin() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+
+            if (email === "" || password === "") {
+                alert("Please enter both email and password.");
+                return;
+            }
+
+            loggedInEmail = email;
+            document.getElementById('loginBox').style.display = 'none';
+            document.getElementById('storeSection').style.display = 'block';
+            refreshStock();
+        }
+
+        // 2. Get Live Stock Numbers (also drives card visibility)
+        async function refreshStock() {
+            await loadStock();
+        }
+
+        // 3. Open the Payment Pop-up
+        function openPayment(type) {
+            pendingKeyType = type;
+            const p = currentProducts[type];
+            document.getElementById('displayPrice').innerText = formatPrice(p && p.price);
+            document.getElementById('paymentModal').style.display = 'flex';
+        }
+
+        // 4. Close the Payment Pop-up
+        function closePayment() {
+            document.getElementById('paymentModal').style.display = 'none';
+        }
+
+        // 5. Submit the FIB Order
+        async function submitManualPayment() {
+            const transId = document.getElementById('transactionId').value.trim();
+            const whatsapp = document.getElementById('whatsappNumber').value.trim();
+
+            if (!transId) {
+                alert("Please enter the FIB Transaction ID so we can verify your payment.");
+                return;
+            }
+            if (!whatsapp) {
+                alert("Please enter your WhatsApp number so we can deliver your key.");
+                return;
+            }
+
+            const btn = event.target;
+            btn.innerText = "Submitting Order...";
+            btn.style.opacity = "0.5";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/manual-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: pendingKeyType,
+                        email: loggedInEmail,
+                        transactionId: transId,
+                        whatsapp: whatsapp
+                    })
+                });
+
+                const result = await res.json();
+
+                closePayment();
+                alert(result.message + "\n\nYou can check your order status at any time by clicking 'Track My Order' in the top menu.");
+
+            } catch (err) {
+                alert("Server error. Please try again.");
+            }
+
+            btn.innerText = "Submit Payment Proof";
+            btn.style.opacity = "1";
+            btn.disabled = false;
+            document.getElementById('transactionId').value = "";
+            document.getElementById('whatsappNumber').value = "";
+        }
+    </script>
+
+</body>
+</html>

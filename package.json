@@ -1,0 +1,15 @@
+{
+  "name": "kurdhs-backend",
+  "version": "1.0.0",
+  "description": "Kurdistan key store backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1",
+    "nodemailer": "^8.0.7"
+  }
+}

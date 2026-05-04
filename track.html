@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>kurdHS - Track My Order</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: #0f172a;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .bg-video {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        .bg-overlay {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(15,23,42,0.55), rgba(30,58,138,0.45));
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .bg-video { display: none; }
+            body { background: linear-gradient(135deg, #0f172a, #1e3a8a); }
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 50px;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .logo { color: #00e5ff; font-weight: bold; font-size: 24px; cursor: pointer; }
+
+        .nav-links { display: flex; gap: 30px; }
+        .nav-links div { color: white; cursor: pointer; transition: color 0.2s; }
+        .nav-links div:hover { color: #00e5ff; }
+        .nav-links .active { color: #00e5ff; }
+
+        .container {
+            max-width: 620px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+
+        .page-title {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .page-title h1 { font-size: 32px; margin-bottom: 8px; }
+        .page-title p { color: #aaa; font-size: 15px; }
+
+        /* Search box */
+        .search-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(0,229,255,0.2);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 30px;
+        }
+
+        .search-card label {
+            display: block;
+            font-size: 14px;
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        input {
+            flex: 1;
+            padding: 13px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.3);
+            color: white;
+            font-size: 15px;
+        }
+
+        input:focus { outline: none; border-color: #00e5ff; }
+        input::placeholder { color: #555; }
+
+        .btn-track {
+            background: #00e5ff;
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            padding: 13px 24px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-track:hover { opacity: 0.88; }
+        .btn-track:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Results */
+        #results { display: none; }
+
+        .results-title {
+            font-size: 15px;
+            color: #aaa;
+            margin-bottom: 14px;
+        }
+
+        .order-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px;
+            padding: 22px 24px;
+            margin-bottom: 16px;
+        }
+
+        .order-card.delivered {
+            border-color: rgba(34,197,94,0.35);
+            background: rgba(34,197,94,0.05);
+        }
+
+        .order-card.pending {
+            border-color: rgba(245,158,11,0.35);
+            background: rgba(245,158,11,0.04);
+        }
+
+        .order-card.rejected {
+            border-color: rgba(239,68,68,0.3);
+            background: rgba(239,68,68,0.04);
+        }
+
+        .order-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .order-label { font-size: 17px; font-weight: bold; }
+        .order-price { color: #00e5ff; font-size: 15px; font-weight: bold; }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-pending { background: rgba(245,158,11,0.2); color: #f59e0b; }
+        .status-delivered { background: rgba(34,197,94,0.2); color: #22c55e; }
+        .status-rejected { background: rgba(239,68,68,0.2); color: #ef4444; }
+
+        .order-date { color: #aaa; font-size: 13px; margin-bottom: 14px; }
+
+        /* Pending message */
+        .pending-msg {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            background: rgba(245,158,11,0.1);
+            border: 1px solid rgba(245,158,11,0.25);
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+
+        .pending-msg .icon { font-size: 22px; flex-shrink: 0; }
+        .pending-msg .text { font-size: 14px; color: #f59e0b; line-height: 1.6; }
+
+        /* Rejected message */
+        .rejected-msg {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.25);
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+
+        .rejected-msg .icon { font-size: 22px; flex-shrink: 0; }
+        .rejected-msg .text { font-size: 14px; color: #ef4444; line-height: 1.6; }
+
+        /* Key display */
+        .key-reveal {
+            text-align: center;
+            padding: 6px 0 2px 0;
+        }
+
+        .key-reveal p {
+            color: #aaa;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+
+        .key-box {
+            background: rgba(0,0,0,0.4);
+            border: 2px solid #00e5ff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 10px;
+        }
+
+        .key-box .key-label {
+            color: #aaa;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .key-box .key-value {
+            font-family: 'Courier New', monospace;
+            font-size: 24px;
+            font-weight: bold;
+            color: #00e5ff;
+            letter-spacing: 3px;
+            word-break: break-all;
+        }
+
+        .copy-btn {
+            background: rgba(0,229,255,0.12);
+            border: 1px solid rgba(0,229,255,0.35);
+            color: #00e5ff;
+            border-radius: 8px;
+            padding: 8px 20px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 8px;
+        }
+
+        .copy-btn:hover { background: rgba(0,229,255,0.22); }
+
+        .success-note {
+            color: #22c55e;
+            font-size: 13px;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: #aaa;
+        }
+
+        .empty-state .icon { font-size: 44px; margin-bottom: 14px; }
+        .empty-state p { font-size: 15px; }
+
+        .back-link {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .back-link a {
+            color: #00e5ff;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-link a:hover { text-decoration: underline; }
+
+        /* Live indicator */
+        .live-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            margin-right: 6px;
+            animation: pulse-dot 1.6s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.75); }
+        }
+
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            font-size: 12px;
+            color: #22c55e;
+            background: rgba(34,197,94,0.12);
+            border: 1px solid rgba(34,197,94,0.3);
+            border-radius: 20px;
+            padding: 3px 10px;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        /* Flash animation when key arrives */
+        @keyframes flash-in {
+            0%   { opacity: 0; transform: scale(0.95); }
+            60%  { opacity: 1; transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .flash-in { animation: flash-in 0.5s ease forwards; }
+    </style>
+</head>
+<body>
+
+<video class="bg-video" autoplay muted loop playsinline preload="auto" poster="/videos/bg-poster.jpg?v=2" aria-hidden="true" tabindex="-1" disablepictureinpicture>
+    <source src="/videos/bg.mp4?v=2" type="video/mp4">
+</video>
+<div class="bg-overlay" aria-hidden="true"></div>
+
+<div class="navbar">
+    <div class="logo" onclick="window.location.href='/'">kurdHS</div>
+    <div class="nav-links">
+        <div onclick="window.location.href='/'">Home</div>
+        <div class="active">Track My Order</div>
+        <div>Contact</div>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="page-title">
+        <h1>Track My Order</h1>
+        <p>Enter the WhatsApp number you used at checkout to see your order status.</p>
+    </div>
+
+    <div class="search-card">
+        <label>Your WhatsApp Number</label>
+        <div class="input-row">
+            <input type="text" id="waInput" placeholder="+9647501234567" onkeydown="if(event.key==='Enter') trackOrder()">
+            <button class="btn-track" id="trackBtn" onclick="trackOrder()">Track Order</button>
+        </div>
+    </div>
+
+    <div id="results"></div>
+
+    <div class="back-link">
+        <a href="/">← Back to Store</a>
+    </div>
+
+</div>
+
+<script>
+    let activeSSE = null;
+    let trackedWaNum = '';
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('wa')) {
+        document.getElementById('waInput').value = params.get('wa');
+        trackOrder();
+    }
+
+    async function trackOrder() {
+        const waNum = document.getElementById('waInput').value.trim();
+        const btn = document.getElementById('trackBtn');
+        const resultsEl = document.getElementById('results');
+
+        if (!waNum) {
+            resultsEl.style.display = 'block';
+            resultsEl.innerHTML = `<div class="empty-state"><div class="icon">📱</div><p>Please enter your WhatsApp number.</p></div>`;
+            return;
+        }
+
+        btn.textContent = 'Searching...';
+        btn.disabled = true;
+
+        closeSSE();
+
+        try {
+            const res = await fetch('/api/track?whatsapp=' + encodeURIComponent(waNum));
+            const orders = await res.json();
+
+            resultsEl.style.display = 'block';
+
+            if (!orders || orders.length === 0) {
+                resultsEl.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🔍</div>
+                        <p>No orders found for <strong>${escHtml(waNum)}</strong>.</p>
+                        <p style="margin-top:8px;font-size:13px;">Make sure you enter the exact number used at checkout.</p>
+                    </div>`;
+                btn.textContent = 'Track Order';
+                btn.disabled = false;
+                return;
+            }
+
+            const hasPending = orders.some(o => o.status === 'pending');
+            const liveTag = hasPending
+                ? `<span class="live-badge"><span class="live-dot"></span>Live</span>`
+                : '';
+
+            resultsEl.innerHTML = `
+                <p class="results-title">
+                    Found ${orders.length} order${orders.length > 1 ? 's' : ''} for ${escHtml(waNum)}${liveTag}
+                </p>
+                ${orders.map(renderOrder).join('')}`;
+
+            if (hasPending) {
+                trackedWaNum = waNum;
+                openSSE(waNum);
+            }
+
+        } catch {
+            resultsEl.style.display = 'block';
+            resultsEl.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>Could not reach the server. Please try again.</p></div>`;
+        }
+
+        btn.textContent = 'Track Order';
+        btn.disabled = false;
+    }
+
+    function openSSE(waNum) {
+        closeSSE();
+        const es = new EventSource('/api/track/stream?whatsapp=' + encodeURIComponent(waNum));
+
+        es.onmessage = (e) => {
+            try {
+                const event = JSON.parse(e.data);
+                if (event.type === 'delivered') {
+                    handleLiveDelivery(event);
+                }
+            } catch {}
+        };
+
+        es.onerror = () => {
+            setTimeout(() => {
+                if (trackedWaNum) openSSE(trackedWaNum);
+            }, 5000);
+        };
+
+        activeSSE = es;
+    }
+
+    function closeSSE() {
+        if (activeSSE) {
+            activeSSE.close();
+            activeSSE = null;
+        }
+    }
+
+    function handleLiveDelivery(event) {
+        const cardEl = document.getElementById('order-card-' + event.orderId);
+        if (!cardEl) return;
+
+        cardEl.className = 'order-card delivered flash-in';
+        cardEl.innerHTML = `
+            <div class="order-top">
+                <div>
+                    <div class="order-label">${escHtml(event.label)}</div>
+                    <div class="order-price">${escHtml(event.price)}</div>
+                </div>
+                <span class="status-badge status-delivered">✓ DELIVERED</span>
+            </div>
+            <div class="order-date">Delivered: ${formatDate(event.deliveredAt)}</div>
+            <div class="key-reveal">
+                <p>Your payment has been confirmed! Here is your key:</p>
+                <div class="key-box">
+                    <div class="key-label">Your Key</div>
+                    <div class="key-value" id="key-${escHtml(event.orderId)}">${escHtml(event.key)}</div>
+                </div>
+                <button class="copy-btn" onclick="copyKey('${escHtml(event.orderId)}', this)">Copy Key</button>
+            </div>`;
+
+        const liveBadge = document.querySelector('.live-badge');
+        if (liveBadge) liveBadge.remove();
+
+        closeSSE();
+        trackedWaNum = '';
+    }
+
+    function renderOrder(order) {
+        const date = formatDate(order.createdAt);
+
+        if (order.status === 'delivered') {
+            return `
+            <div class="order-card delivered" id="order-card-${escHtml(order.id)}">
+                <div class="order-top">
+                    <div>
+                        <div class="order-label">${escHtml(order.label)}</div>
+                        <div class="order-price">${escHtml(order.price)}</div>
+                    </div>
+                    <span class="status-badge status-delivered">✓ DELIVERED</span>
+                </div>
+                <div class="order-date">Ordered: ${date}${order.deliveredAt ? ' · Delivered: ' + formatDate(order.deliveredAt) : ''}</div>
+                <div class="key-reveal">
+                    <p>Your payment has been verified. Here is your key:</p>
+                    <div class="key-box">
+                        <div class="key-label">Your Key</div>
+                        <div class="key-value" id="key-${escHtml(order.id)}">${escHtml(order.key)}</div>
+                    </div>
+                    <button class="copy-btn" onclick="copyKey('${escHtml(order.id)}', this)">Copy Key</button>
+                </div>
+            </div>`;
+        }
+
+        if (order.status === 'pending') {
+            return `
+            <div class="order-card pending" id="order-card-${escHtml(order.id)}">
+                <div class="order-top">
+                    <div>
+                        <div class="order-label">${escHtml(order.label)}</div>
+                        <div class="order-price">${escHtml(order.price)}</div>
+                    </div>
+                    <span class="status-badge status-pending">⏳ PENDING</span>
+                </div>
+                <div class="order-date">Ordered: ${date}</div>
+                <div class="pending-msg">
+                    <div class="icon">⏳</div>
+                    <div class="text">
+                        <strong>Waiting for payment verification.</strong><br>
+                        Our team is reviewing your FIB transfer. Once confirmed, your key will appear here automatically — no need to refresh.
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        if (order.status === 'rejected') {
+            return `
+            <div class="order-card rejected" id="order-card-${escHtml(order.id)}">
+                <div class="order-top">
+                    <div>
+                        <div class="order-label">${escHtml(order.label)}</div>
+                        <div class="order-price">${escHtml(order.price)}</div>
+                    </div>
+                    <span class="status-badge status-rejected">✕ REJECTED</span>
+                </div>
+                <div class="order-date">Ordered: ${date}</div>
+                <div class="rejected-msg">
+                    <div class="icon">❌</div>
+                    <div class="text">
+                        <strong>This order was not confirmed.</strong><br>
+                        We could not verify your FIB payment. Please contact us via WhatsApp if you believe this is an error.
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        return '';
+    }
+
+    function copyKey(orderId, btn) {
+        const keyEl = document.getElementById('key-' + orderId);
+        if (!keyEl) return;
+        navigator.clipboard.writeText(keyEl.textContent).then(() => {
+            btn.textContent = 'Copied!';
+            btn.style.color = '#22c55e';
+            btn.style.borderColor = '#22c55e';
+            setTimeout(() => {
+                btn.textContent = 'Copy Key';
+                btn.style.color = '';
+                btn.style.borderColor = '';
+            }, 2500);
+        });
+    }
+
+    function formatDate(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function escHtml(str) {
+        return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    window.addEventListener('beforeunload', closeSSE);
+
+    try {
+        fetch('/api/analytics/track', { method: 'POST', credentials: 'same-origin', keepalive: true }).catch(() => {});
+    } catch {}
+</script>
+
+</body>
+</html>
