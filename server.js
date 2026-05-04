@@ -1,3 +1,36 @@
+
+// دڵنیابە لە سەرووی فایلەکە ئەمە هەیە
+const nodemailer = require('nodemailer');
+
+// دروستکردنی گواستەرەوەی ئیمەیڵ (Mailer)
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'alleyesonyouna@gmail.com', // ئیمەیڵی خۆت لێرە بنووسە
+        pass: 'wflx yhmp puaj hsoj'     // 'App Password' لێرە دابنێ (نەک پاسوۆردی ئاسایی)
+    }
+});
+
+// گۆڕینی بەشی deliver بۆ ئەوەی ئیمەیڵ بنێرێت
+app.post('/api/admin/deliver/:orderId', async (req, res) => {
+    // ... کۆدی دۆزینەوەی داواکاری و دەرهێنانی کلیل ...
+
+    const mailOptions = {
+        from: 'your-email@gmail.com',
+        to: order.email,
+        subject: `Your Key - ${order.label}`,
+        text: `Hi! Your payment is verified. Your key is: ${assignedKey}`
+    };
+
+    try {
+        await transporter.sendMail(mailOptions); // ناردنی ئیمەیڵەکە
+        res.json({ success: true, message: 'ئیمەیڵ بۆ کڕیارەکە نێردرا!' });
+    } catch (error) {
+        console.error('Email Error:', error);
+        res.status(500).json({ error: 'کلیلەکە گەیەندرا بەڵام ئیمەیڵەکە نەڕۆیشت' });
+    }
+});
+
 const express = require('express');
 const path = require('path');
 const app = express();
