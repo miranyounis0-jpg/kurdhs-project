@@ -337,12 +337,6 @@ app.post('/api/admin/products', (req, res) => {
 
     const data = req.body;
     
-    // ئەگەر سایتەکە جۆرەکەی خستبووە ناو بۆدییەکەوە
-    if (data && data.type) {
-        let actualType = data.type;
-        if (actualType.includes('1')) actualType = 'one_day';
-        else if (actualType.includes('7')) actualType = 'seven_day';
-        else if (actualType.includes('30')) actualType = 'thirty_day';
 
         if (products[actualType]) {
             if (data.price !== undefined) products[actualType].price = Number(data.price);
