@@ -214,6 +214,30 @@ app.post('/api/admin/products/:type', (req, res) => {
     const { type } = req.params;
     const { price, imageUrl } = req.body;
 
+    // --- بەشی زیادکردنی بەرهەمی نوێ ---
+app.post('/api/admin/add-product', (req, res) => {
+    const token = req.headers['x-admin-token'];
+    if (token !== adminToken) return res.status(401).json({ error: 'Unauthorized' });
+
+    // وەرگرتنی زانیارییەکان: (id: ناوە ئینگلیزییەکەیە وەک 60_day، price: نرخ، imageUrl: لینکی وێنە)
+    const { id, price, imageUrl } = req.body;
+
+    if (!id || price === undefined) {
+        return res.status(400).json({ error: 'تکایە ناو و نرخی بەرهەمەکە بنووسە' });
+    }
+
+    // ئەگەر ئەم بەرهەمە پێشتر هەبێت، با دروستی نەکاتەوە
+    if (products[id]) {
+        return res.status(400).json({ error: 'ئەم بەرهەمە پێشتر هەیە!' });
+    }
+
+    // زیادکردنی بۆ لیستی بەرهەمەکان و دروستکردنی کۆگایەکی نوێ بۆی
+    products[id] = { price: Number(price), imageUrl: imageUrl || "" };
+    stock[id] = []; 
+
+    res.json({ success: true, message: `بەرهەمی ${id} بە سەرکەوتوویی زیادکرا!` });
+});
+
     // گۆڕینی داتاکان
     if (products[type]) {
         if (price !== undefined) products[type].price = Number(price);
