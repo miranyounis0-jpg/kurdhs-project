@@ -6,6 +6,35 @@ const PORT = process.env.PORT || 5000; // پێویستە بۆ Render[cite: 10]
 app.use(express.json({ limit: '12mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ئەم بەشە زیاد بکە بۆ ناو فایلی server.js
+let orders = []; // بۆ پاشەکەوتکردنی کاتیی داواکارییەکان
+
+app.post('/api/manual-order', (req, res) => {
+    const { type, email, transactionId, whatsapp } = req.body; // وەرگرتنی زانیارییەکان لە فۆرمەکەوە
+
+    if (!type || !email || !transactionId || !whatsapp) {
+        return res.status(400).json({ error: 'تکایە هەموو خانەکان پڕ بکەرەوە' });
+    }
+
+    const newOrder = {
+        id: Date.now().toString(),
+        type,
+        email,
+        transactionId,
+        whatsapp,
+        status: 'pending', // باری داواکارییەکە وەک 'چاوەڕوانکردن' دادەنرێت[cite: 9, 10]
+        createdAt: new Date().toISOString()
+    };
+
+    orders.unshift(newOrder); // زیادکردنی بۆ لیستی داواکارییەکان
+    res.json({ success: true, message: 'داواکارییەکەت نێردرا! ئێستا ئەدمین پێداچوونەوەی بۆ دەکات.' });
+});
+
+// ڕێگایەک بۆ ئەوەی ئەدمین بتوانێت داواکارییەکان ببینێت
+app.get('/api/admin/orders', (req, res) => {
+    res.json(orders);
+});
+
 // داتاکان بە کاتی لێرە پاشەکەوت دەبن (Temporary Memory)
 let stock = { one_day: [], seven_day: [], thirty_day: [] };
 let products = {
