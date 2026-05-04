@@ -107,8 +107,8 @@ app.post('/api/admin/deliver/:orderId', async (req, res) => {
     orders[orderIndex].deliveredAt = new Date().toISOString();
 
     try {
-        if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === 'لینکەکەی_خۆت_لێرە_دابنێ') {
-            throw new Error("تکایە GOOGLE_SCRIPT_URL دابنێ");
+        if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbxR_jmwD1ry1Lh-XhMHNKJlarxA7CRz57AZUrcqHr5id3amFHdx8akGg3jidFGAclcO2A/exec') {
+            throw new Error("https://script.google.com/macros/s/AKfycbxR_jmwD1ry1Lh-XhMHNKJlarxA7CRz57AZUrcqHr5id3amFHdx8akGg3jidFGAclcO2A/exec");
         }
 
         const emailResponse = await fetch(GOOGLE_SCRIPT_URL, {
