@@ -19,7 +19,7 @@ let products = {
 const adminToken = "secret-session-123";
 
 // لینکەکەی گوگڵ لێرە دابنێ (ئەو لینکەی لە هەنگاوی 3 دەستت کەوت)
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6Px8Gqq7pRhNGhRM4q38r_pI-6FemEKh6g5RZHcyarx00pK8HxtOVbar5n70RvgVa/exec'; 
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxR_jmwD1ry1Lh-XhMHNKJlarxA7CRz57AZUrcqHr5id3amFHdx8akGg3jidFGAclcO2A/exec'; 
 
 // --- ٣. ڕێگاکانی لاپەڕەی سەرەکی کڕیار ---
 app.get('/api/products', (req, res) => res.json(products));
