@@ -1,6 +1,5 @@
 const express = require('express');
 const path = require('path');
-// تێبینی: nodemailer مان سڕییەوە چونکە ئیتر پێویستمان پێی نابێت
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -12,14 +11,69 @@ app.use(express.static(path.join(__dirname, 'public')));
 let orders = []; 
 let stock = { one_day: [], seven_day: [], thirty_day: [] };
 let products = {
-    one_day: { price: 5, imageUrl: "" },
-    seven_day: { price: 20, imageUrl: "" },
-    thirty_day: { price: 60, imageUrl: "" }
+    one_day: { price: 5, imageUrl: "", label: "1 Day Key" },
+    seven_day: { price: 20, imageUrl: "", label: "7 Days Key" },
+    thirty_day: { price: 60, imageUrl: "", label: "30 Days Key" }
 };
 const adminToken = "secret-session-123";
 
-// لینکەکەی گوگڵ لێرە دابنێ (ئەو لینکەی لە هەنگاوی 3 دەستت کەوت)
+// لینکەکەی گوگڵ
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxR_jmwD1ry1Lh-XhMHNKJlarxA7CRz57AZUrcqHr5id3amFHdx8akGg3jidFGAclcO2A/exec'; 
+
+// --- ٢. بەشی ئامارەکان (Analytics) ---
+let analyticsData = {
+    totalViews: 0,
+    uniqueVisitors: new Set(),
+    viewsToday: 0,
+    lastResetDate: new Date().toDateString(),
+    dailyStats: {} 
+};
+
+app.post('/api/track-visit', (req, res) => {
+    const today = new Date().toDateString();
+    const dateKey = new Date().toISOString().split('T')[0];
+
+    if (analyticsData.lastResetDate !== today) {
+        analyticsData.viewsToday = 0;
+        analyticsData.lastResetDate = today;
+    }
+
+    analyticsData.totalViews++;
+    analyticsData.viewsToday++;
+
+    if (!analyticsData.dailyStats[dateKey]) {
+        analyticsData.dailyStats[dateKey] = 0;
+    }
+    analyticsData.dailyStats[dateKey]++;
+
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    if (ip) analyticsData.uniqueVisitors.add(ip);
+
+    res.json({ success: true });
+});
+
+app.get('/api/admin/analytics', (req, res) => {
+    const token = req.headers['x-admin-token'];
+    if (token !== adminToken) return res.status(401).json({ error: 'Unauthorized' });
+
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateKey = d.toISOString().split('T')[0];
+        last7Days.push({
+            date: dateKey,
+            views: analyticsData.dailyStats[dateKey] || 0
+        });
+    }
+
+    res.json({
+        totalViews: analyticsData.totalViews,
+        uniqueVisitors: analyticsData.uniqueVisitors.size,
+        viewsToday: analyticsData.viewsToday,
+        chartData: last7Days
+    });
+});
 
 // --- ٣. ڕێگاکانی لاپەڕەی سەرەکی کڕیار ---
 app.get('/api/products', (req, res) => res.json(products));
@@ -56,7 +110,7 @@ app.post('/api/manual-order', (req, res) => {
     };
 
     orders.unshift(newOrder); 
-    res.json({ success: true, message: 'داواکارییەکەت نێردرا! ئێستا ئەدمین پێداچوونەوەی بۆ دەکات.' });
+    res.json({ success: true, message: 'داواکارییەکەت نێردرا!' });
 });
 
 // --- ٤. ڕێگاکانی ئەدمین ---
@@ -68,10 +122,7 @@ app.post('/api/admin/login', (req, res) => {
     }
 });
 
-app.get('/api/admin/orders', (req, res) => {
-    res.json(orders);
-});
-
+app.get('/api/admin/orders', (req, res) => res.json(orders));
 app.get('/api/admin/stock', (req, res) => res.json(stock));
 
 app.post('/api/admin/stock/add', (req, res) => {
@@ -84,7 +135,7 @@ app.post('/api/admin/stock/add', (req, res) => {
     }
 });
 
-// ناردنی کلیل و ئیمەیڵ بە بەکارهێنانی پردی گوگڵ
+// ناردنی کلیل و ئیمەیڵ
 app.post('/api/admin/deliver/:orderId', async (req, res) => {
     const { orderId } = req.params;
     const token = req.headers['x-admin-token'];
@@ -92,141 +143,35 @@ app.post('/api/admin/deliver/:orderId', async (req, res) => {
     if (token !== adminToken) return res.status(401).json({ error: 'Unauthorized' });
 
     const orderIndex = orders.findIndex(o => o.id === orderId);
-    if (orderIndex === -1) return res.status(404).json({ error: 'داواکارییەکە نەدۆزرایەوە' });
+    if (orderIndex === -1) return res.status(404).json({ error: 'نەدۆزرایەوە' });
 
     const order = orders[orderIndex];
 
     if (!stock[order.type] || stock[order.type].length === 0) {
-        return res.status(400).json({ error: 'کلیل لە کۆگادا نەماوە!' });
+        return res.status(400).json({ error: 'کلیل نەماوە!' });
     }
 
     const assignedKey = stock[order.type].shift();
-
-    orders[orderIndex].status = 'delivered';
-    orders[orderIndex].key = assignedKey;
-    orders[orderIndex].deliveredAt = new Date().toISOString();
+    order.status = 'delivered';
+    order.key = assignedKey;
+    order.deliveredAt = new Date().toISOString();
 
     try {
-        if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbxR_jmwD1ry1Lh-XhMHNKJlarxA7CRz57AZUrcqHr5id3amFHdx8akGg3jidFGAclcO2A/exec') {
-            throw new Error("https://script.google.com/macros/s/AKfycbxR_jmwD1ry1Lh-XhMHNKJlarxA7CRz57AZUrcqHr5id3amFHdx8akGg3jidFGAclcO2A/exec");
-        }
-
-        const emailResponse = await fetch(GOOGLE_SCRIPT_URL, {
+        await fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
             body: JSON.stringify({
                 to: order.email,
                 subject: `Your Key - ${order.label}`,
-                html: `
-                <div style="font-family: sans-serif; padding: 20px; background-color: #f4f4f4;">
-                    <h2 style="color: #00e5ff;">Hi! Your key is ready.</h2>
-                    <p>Product: <b>${order.label}</b></p>
-                    <div style="padding: 15px; background: #fff; border: 2px solid #00e5ff; font-size: 20px; font-weight: bold; text-align: center;">
-                        ${assignedKey}
-                    </div>
-                    <p>Thank you for choosing kurdHS!</p>
-                </div>`
+                html: `<h2>Your Key: ${assignedKey}</h2>`
             })
         });
-        
-        if (!emailResponse.ok) {
-             throw new Error(`HTTP error! status: ${emailResponse.status}`);
-        }
-
-        res.json({ success: true, message: 'کلیلەکە بە سەرکەوتوویی گەیەندرا و ئیمەیڵەکەش نێردرا!' });
+        res.json({ success: true, message: 'نێردرا!' });
     } catch (error) {
-        console.error('Email API Error:', error);
-        res.json({ success: true, message: 'کلیلەکە گەیەندرا بەڵام کێشە لە ناردنی ئیمەیڵ هەبوو.' });
-    }
-});
-// لاپەڕەی سەرەکی بۆ کڕیارەکان
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html'))); 
-app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
-app.get('/track', (req, res) => res.sendFile(path.join(__dirname, 'public', 'track.html')));
-// لاپەڕەی سەرەکی بۆ کڕیارەکان
-
-
-// --- ٦. بەشی ئامارەکان (Analytics) ---
-let analyticsData = {
-    totalViews: 0,
-    uniqueVisitors: new Set(),
-    viewsToday: 0,
-    lastResetDate: new Date().toDateString(),
-    dailyStats: {} 
-};
-
-// ڕێگایەک بۆ ئەوەی سایتەکە سەردانەکان تۆمار بکات
-app.post('/api/track-visit', (req, res) => {
-    const today = new Date().toDateString();
-    const dateKey = new Date().toISOString().split('T')[0];
-
-    // ئەگەر ڕۆژ گۆڕابێت، ئاماری 'ئەمڕۆ' سفر دەکەینەوە
-    if (analyticsData.lastResetDate !== today) {
-        analyticsData.viewsToday = 0;
-        analyticsData.lastResetDate = today;
-    }
-
-    analyticsData.totalViews++;
-    analyticsData.viewsToday++;
-
-    // زیادکردنی ئاماری ڕۆژانە بۆ چارتەکە
-    if (!analyticsData.dailyStats[dateKey]) {
-        analyticsData.dailyStats[dateKey] = 0;
-    }
-    analyticsData.dailyStats[dateKey]++;
-
-    // بینەری ناوازە (بەپێی IP)
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    if (ip) analyticsData.uniqueVisitors.add(ip);
-
-    res.json({ success: true });
-});
-
-// ڕێگایەک بۆ ئەوەی ئەدمین پانێڵ داتاکان وەربگرێت
-app.get('/api/admin/analytics', (req, res) => {
-    const token = req.headers['x-admin-token'];
-    if (token !== adminToken) return res.status(401).json({ error: 'Unauthorized' });
-
-    // ئامادەکردنی داتا بۆ چارتی ٧ ڕۆژی ڕابردوو
-    const last7Days = [];
-    for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const dateKey = d.toISOString().split('T')[0];
-        last7Days.push({
-            date: dateKey,
-            views: analyticsData.dailyStats[dateKey] || 0
-        });
-    }
-
-    res.json({
-        totalViews: analyticsData.totalViews,
-        uniqueVisitors: analyticsData.uniqueVisitors.size,
-        viewsToday: analyticsData.viewsToday,
-        chartData: last7Days
-    });
-});
-
-// --- ٧. بەشی نوێکردنەوەی نرخ و وێنەی بەرهەمەکان ---
-app.post('/api/admin/products/:type', (req, res) => {
-    const token = req.headers['x-admin-token'];
-    
-    // دڵنیابوونەوە لەوەی کە کەسەکە ئەدمینە
-    if (token !== adminToken) return res.status(401).json({ error: 'Unauthorized' });
-
-    const { type } = req.params;
-    const { price, imageUrl } = req.body;
-
-    // گۆڕینی داتاکان
-    if (products[type]) {
-        if (price !== undefined) products[type].price = Number(price);
-        if (imageUrl !== undefined) products[type].imageUrl = imageUrl;
-        res.json({ success: true, message: 'بە سەرکەوتوویی نوێکرایەوە' });
-    } else {
-        res.status(400).json({ error: 'بەرهەمەکە نەدۆزرایەوە' });
+        res.json({ success: true, message: 'کلیلەکە گەیەندرا بەڵام کێشەی ئیمەیڵ هەبوو.' });
     }
 });
 
-// --- ٧. بەشی نوێکردنەوەی نرخ و وێنەی بەرهەمەکان ---
+// --- ٥. بەشی نوێکردنەوەی نرخ و وێنە (Smart Route) ---
 app.post('/api/admin/products/:type', (req, res) => {
     const token = req.headers['x-admin-token'];
     if (token !== adminToken) return res.status(401).json({ error: 'Unauthorized' });
@@ -234,116 +179,25 @@ app.post('/api/admin/products/:type', (req, res) => {
     let { type } = req.params;
     const { price, imageUrl } = req.body;
 
-    // لێرەدا سێرڤەرەکە زیرەک دەکەین بۆ ناسینەوەی بەرهەمەکە
     let actualType = type;
     if (type.includes('1')) actualType = 'one_day';
     else if (type.includes('7')) actualType = 'seven_day';
     else if (type.includes('30')) actualType = 'thirty_day';
 
-  // --- ٧. بەشی نوێکردنەوەی نرخ و وێنەی بەرهەمەکان (بەهێزکراو) ---
-
-// جۆری یەکەم: ئەگەر سایتەکە جۆرەکە لە ناو لینکەکەدا بنێرێت
-app.post('/api/admin/products/:type', (req, res) => {
-    const token = req.headers['x-admin-token'];
-    if (token !== adminToken) return res.status(401).json({ error: 'Unauthorized' });
-
-    let type = req.params.type;
-    const { price, imageUrl } = req.body;
-
-    let actualType = type;
-    if (type.includes('1') || type === 'one_day') actualType = 'one_day';
-    else if (type.includes('7') || type === 'seven_day') actualType = 'seven_day';
-    else if (type.includes('30') || type === 'thirty_day') actualType = 'thirty_day';
-
     if (products[actualType]) {
         if (price !== undefined && price !== "") products[actualType].price = Number(price);
         if (imageUrl !== undefined && imageUrl !== "") products[actualType].imageUrl = imageUrl;
-        res.json({ success: true, message: 'بە سەرکەوتوویی نوێکرایەوە!' });
+        res.json({ success: true, message: 'نوێکرایەوە!' });
     } else {
-        res.status(400).json({ error: 'بەرهەمەکە نەدۆزرایەوە' });
+        res.status(400).json({ error: 'نەدۆزرایەوە' });
     }
 });
 
-// جۆری دووەم: ئەگەر سایتەکە بەشێوەیەکی گشتی داتاکە بنێرێت
-app.post('/api/admin/products', (req, res) => {
-    const token = req.headers['x-admin-token'];
-    if (token !== adminToken) return res.status(401).json({ error: 'Unauthorized' });
+// --- ٦. ڕێگاکانی لاپەڕەکان (Links) ---
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html'))); 
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/track', (req, res) => res.sendFile(path.join(__dirname, 'public', 'track.html')));
 
-    const data = req.body;
-    
-    // ئەگەر سایتەکە جۆرەکەی خستبووە ناو بۆدییەکەوە
-    if (data && data.type) {
-        let actualType = data.type;
-        if (actualType.includes('1')) actualType = 'one_day';
-        else if (actualType.includes('7')) actualType = 'seven_day';
-        else if (actualType.includes('30')) actualType = 'thirty_day';
-
-        if (products[actualType]) {
-            if (data.price !== undefined) products[actualType].price = Number(data.price);
-            if (data.imageUrl !== undefined) products[actualType].imageUrl = data.imageUrl;
-            return res.json({ success: true, message: 'بە سەرکەوتوویی نوێکرایەوە!' });
-        }
-    }
-
-    // ئەگەر سایتەکە هەموو بەرهەمەکانی پێکەوە نارد
-    if (data && typeof data === 'object') {
-        for (const key in data) {
-            let actualKey = key;
-            if (key.includes('1')) actualKey = 'one_day';
-            else if (key.includes('7')) actualKey = 'seven_day';
-            else if (key.includes('30')) actualKey = 'thirty_day';
-
-            if (products[actualKey]) {
-                if (data[key].price !== undefined) products[actualKey].price = Number(data[key].price);
-                if (data[key].imageUrl !== undefined) products[actualKey].imageUrl = data[key].imageUrl;
-            }
-        }
-        return res.json({ success: true, message: 'نوێکرایەوە' });
-    }
-
-// --- ٧. بەشی نوێکردنەوەی نرخ و وێنەی بەرهەمەکان (بەهێزکراو) ---
-
-// جۆری یەکەم: ئەگەر سایتەکە جۆرەکە لە ناو لینکەکەدا بنێرێت
-
-
-// جۆری دووەم: ئەگەر سایتەکە بەشێوەیەکی گشتی داتاکە بنێرێت
-app.post('/api/admin/products', (req, res) => {
-    const token = req.headers['x-admin-token'];
-    if (token !== adminToken) return res.status(401).json({ error: 'Unauthorized' });
-
-    const data = req.body;
-    
-    // ئەگەر سایتەکە جۆرەکەی خستبووە ناو بۆدییەکەوە
-    if (data && data.type) {
-        let actualType = data.type;
-        if (actualType.includes('1')) actualType = 'one_day';
-        else if (actualType.includes('7')) actualType = 'seven_day';
-        else if (actualType.includes('30')) actualType = 'thirty_day';
-
-        if (products[actualType]) {
-            if (data.price !== undefined) products[actualType].price = Number(data.price);
-            if (data.imageUrl !== undefined) products[actualType].imageUrl = data.imageUrl;
-            return res.json({ success: true, message: 'بە سەرکەوتوویی نوێکرایەوە!' });
-        }
-    }
-
-    // ئەگەر سایتەکە هەموو بەرهەمەکانی پێکەوە نارد
-    if (data && typeof data === 'object') {
-        for (const key in data) {
-            let actualKey = key;
-            if (key.includes('1')) actualKey = 'one_day';
-            else if (key.includes('7')) actualKey = 'seven_day';
-            else if (key.includes('30')) actualKey = 'thirty_day';
-
-            if (products[actualKey]) {
-                if (data[key].price !== undefined) products[actualKey].price = Number(data[key].price);
-                if (data[key].imageUrl !== undefined) products[actualKey].imageUrl = data[key].imageUrl;
-            }
-        }
-        return res.json({ success: true, message: 'نوێکرایەوە' });
-    }
-  
-});
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT}`);
 });
