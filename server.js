@@ -224,21 +224,29 @@ app.post('/api/admin/products/:type', (req, res) => {
     }
 });
 
-// ئەگەر سایتەکەت داواکاری گشتی دەنێرێت (بۆ هەموو جۆرەکان):
-app.post('/api/admin/products', (req, res) => {
+// --- ٧. بەشی نوێکردنەوەی نرخ و وێنەی بەرهەمەکان ---
+app.post('/api/admin/products/:type', (req, res) => {
     const token = req.headers['x-admin-token'];
     if (token !== adminToken) return res.status(401).json({ error: 'Unauthorized' });
 
-    const updatedData = req.body;
-    for (const key in updatedData) {
-        if (products[key]) {
-            products[key].price = updatedData[key].price || products[key].price;
-            products[key].imageUrl = updatedData[key].imageUrl || products[key].imageUrl;
-        }
-    }
-    res.json({ success: true });
-});
+    let { type } = req.params;
+    const { price, imageUrl } = req.body;
 
+    // لێرەدا سێرڤەرەکە زیرەک دەکەین بۆ ناسینەوەی بەرهەمەکە
+    let actualType = type;
+    if (type.includes('1')) actualType = 'one_day';
+    else if (type.includes('7')) actualType = 'seven_day';
+    else if (type.includes('30')) actualType = 'thirty_day';
+
+    // گۆڕینی داتاکان
+    if (products[actualType]) {
+        if (price !== undefined && price !== "") products[actualType].price = Number(price);
+        if (imageUrl !== undefined && imageUrl !== "") products[actualType].imageUrl = imageUrl;
+        res.json({ success: true, message: 'بە سەرکەوتوویی نوێکرایەوە!' });
+    } else {
+        res.status(400).json({ error: `نەدۆزرایەوە: ${type}` });
+    }
+});
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT}`);
 });
