@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('path');
-const nodemailer = require('nodemailer');
+// تێبینی: nodemailer مان سڕییەوە چونکە ئیتر پێویستمان پێی نابێت
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -18,19 +18,8 @@ let products = {
 };
 const adminToken = "secret-session-123";
 
-// --- ٢. ڕێکخستنی ئیمەیڵ (Nodemailer) ---
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587, // گۆڕدرا بۆ پۆرتی 587[cite: 5]
-    secure: false, // بۆ پۆرتی 587 دەبێت false بێت[cite: 5]
-    auth: {
-        user: 'alleyesonyouna@gmail.com',
-        pass: 'wflxyhmppuajhsoj' // پاسوۆردەکەت ڕاستە و بەبێ بۆشاییە
-    },
-    tls: {
-        rejectUnauthorized: false // ئەم دێڕە زیاد بکە بۆ ئەوەی لە سێرڤەرەکاندا کێشە دروست نەبێت
-    }
-});
+// لینکەکەی گوگڵ لێرە دابنێ (ئەو لینکەی لە هەنگاوی 3 دەستت کەوت)
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6Px8Gqq7pRhNGhRM4q38r_pI-6FemEKh6g5RZHcyarx00pK8HxtOVbar5n70RvgVa/exec'; 
 
 // --- ٣. ڕێگاکانی لاپەڕەی سەرەکی کڕیار ---
 app.get('/api/products', (req, res) => res.json(products));
@@ -49,7 +38,6 @@ app.post('/api/manual-order', (req, res) => {
         return res.status(400).json({ error: 'تکایە هەموو خانەکان پڕ بکەرەوە' });
     }
 
-    // دانانی ناو بۆ بەرهەمەکە بۆ ئەوەی لە ئیمەیڵەکەدا دەربکەوێت
     const productLabels = {
         'one_day': '1 Day Key',
         'seven_day': '7 Days Key',
@@ -96,7 +84,7 @@ app.post('/api/admin/stock/add', (req, res) => {
     }
 });
 
-// ناردنی کلیل و ئیمەیڵ بەیەکەوە (بۆ ئەوەی کێشەی نەناردنەکە چارەسەر بێت)
+// ناردنی کلیل و ئیمەیڵ بە بەکارهێنانی پردی گوگڵ
 app.post('/api/admin/deliver/:orderId', async (req, res) => {
     const { orderId } = req.params;
     const token = req.headers['x-admin-token'];
@@ -118,27 +106,35 @@ app.post('/api/admin/deliver/:orderId', async (req, res) => {
     orders[orderIndex].key = assignedKey;
     orders[orderIndex].deliveredAt = new Date().toISOString();
 
-    // ڕێکخستنی ئیمەیڵ
-    const mailOptions = {
-        from: '"kurdHS Team" <alleyesonyouna@gmail.com>', 
-        to: order.email, 
-        subject: `Your Key - ${order.label}`,
-        html: `
-            <div style="font-family: sans-serif; padding: 20px; background-color: #f4f4f4;">
-                <h2 style="color: #00e5ff;">Hi! Your key is ready.</h2>
-                <p>Product: <b>${order.label}</b></p>
-                <div style="padding: 15px; background: #fff; border: 2px solid #00e5ff; font-size: 20px; font-weight: bold; text-align: center;">
-                    ${assignedKey}
-                </div>
-                <p>Thank you for choosing kurdHS!</p>
-            </div>`
-    };
-
     try {
-        await transporter.sendMail(mailOptions);
+        if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === 'لینکەکەی_خۆت_لێرە_دابنێ') {
+            throw new Error("تکایە GOOGLE_SCRIPT_URL دابنێ");
+        }
+
+        const emailResponse = await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                to: order.email,
+                subject: `Your Key - ${order.label}`,
+                html: `
+                <div style="font-family: sans-serif; padding: 20px; background-color: #f4f4f4;">
+                    <h2 style="color: #00e5ff;">Hi! Your key is ready.</h2>
+                    <p>Product: <b>${order.label}</b></p>
+                    <div style="padding: 15px; background: #fff; border: 2px solid #00e5ff; font-size: 20px; font-weight: bold; text-align: center;">
+                        ${assignedKey}
+                    </div>
+                    <p>Thank you for choosing kurdHS!</p>
+                </div>`
+            })
+        });
+        
+        if (!emailResponse.ok) {
+             throw new Error(`HTTP error! status: ${emailResponse.status}`);
+        }
+
         res.json({ success: true, message: 'کلیلەکە بە سەرکەوتوویی گەیەندرا و ئیمەیڵەکەش نێردرا!' });
     } catch (error) {
-        console.error('SMTP Error:', error);
+        console.error('Email API Error:', error);
         res.json({ success: true, message: 'کلیلەکە گەیەندرا بەڵام کێشە لە ناردنی ئیمەیڵ هەبوو.' });
     }
 });
