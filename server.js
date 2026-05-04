@@ -16,7 +16,7 @@ app.post('/api/admin/deliver/:orderId', async (req, res) => {
     // ... کۆدی دۆزینەوەی داواکاری و دەرهێنانی کلیل ...
 
     const mailOptions = {
-        from: 'your-email@gmail.com',
+        from: 'alleyesonyouna@gmail.com',
         to: order.email,
         subject: `Your Key - ${order.label}`,
         text: `Hi! Your payment is verified. Your key is: ${assignedKey}`
