@@ -302,26 +302,7 @@ app.post('/api/admin/products', (req, res) => {
 // --- ٧. بەشی نوێکردنەوەی نرخ و وێنەی بەرهەمەکان (بەهێزکراو) ---
 
 // جۆری یەکەم: ئەگەر سایتەکە جۆرەکە لە ناو لینکەکەدا بنێرێت
-app.post('/api/admin/products/:type', (req, res) => {
-    const token = req.headers['x-admin-token'];
-    if (token !== adminToken) return res.status(401).json({ error: 'Unauthorized' });
 
-    let type = req.params.type;
-    const { price, imageUrl } = req.body;
-
-    let actualType = type;
-    if (type.includes('1') || type === 'one_day') actualType = 'one_day';
-    else if (type.includes('7') || type === 'seven_day') actualType = 'seven_day';
-    else if (type.includes('30') || type === 'thirty_day') actualType = 'thirty_day';
-
-    if (products[actualType]) {
-        if (price !== undefined && price !== "") products[actualType].price = Number(price);
-        if (imageUrl !== undefined && imageUrl !== "") products[actualType].imageUrl = imageUrl;
-        res.json({ success: true, message: 'بە سەرکەوتوویی نوێکرایەوە!' });
-    } else {
-        res.status(400).json({ error: 'بەرهەمەکە نەدۆزرایەوە' });
-    }
-});
 
 // جۆری دووەم: ئەگەر سایتەکە بەشێوەیەکی گشتی داتاکە بنێرێت
 app.post('/api/admin/products', (req, res) => {
@@ -359,11 +340,7 @@ app.post('/api/admin/products', (req, res) => {
         }
         return res.json({ success: true, message: 'نوێکرایەوە' });
     }
-
-    res.status(400).json({ error: 'شێوازی ناردنی داتا هەڵەیە' });
-});
-    
-    res.status(400).json({ error: 'شێوازی ناردنی داتا هەڵەیە' });
+  
 });
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT}`);
