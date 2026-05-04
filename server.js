@@ -80,6 +80,35 @@ app.post('/api/admin/stock/add', (req, res) => {
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 app.get('/track', (req, res) => res.sendFile(path.join(__dirname, 'public', 'track.html')));
 
+// ئەم بەشە زیاد بکە بۆ ناو فایلی server.js پێش app.listen
+app.post('/api/admin/deliver/:orderId', (req, res) => {
+    const { orderId } = req.params;
+    const token = req.headers['x-admin-token'];
+
+    // پشکنینی ڕێپێدان
+    if (token !== adminToken) return res.status(401).json({ error: 'Unauthorized' });
+
+    const orderIndex = orders.findIndex(o => o.id === orderId);
+    if (orderIndex === -1) return res.status(404).json({ error: 'داواکارییەکە نەدۆزرایەوە' });
+
+    const order = orders[orderIndex];
+
+    // پشکنینی ئەوەی ئایا کلیل لە کۆگادا هەیە بۆ ئەو جۆرە
+    if (!stock[order.type] || stock[order.type].length === 0) {
+        return res.status(400).json({ error: `کلیل بەردەست نییە بۆ ${order.type}` });
+    }
+
+    // دەرهێنانی یەکەم کلیل لە لیستی کلیلەکان[cite: 10]
+    const assignedKey = stock[order.type].shift();
+
+    // نوێکردنەوەی باری داواکارییەکە بۆ گەیەندراو[cite: 9, 10]
+    orders[orderIndex].status = 'delivered';
+    orders[orderIndex].key = assignedKey;
+    orders[orderIndex].deliveredAt = new Date().toISOString();
+
+    res.json({ success: true, message: 'کلیلەکە بە سەرکەوتوویی گەیەندرا!', key: assignedKey });
+});
+
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT}`);
 });
