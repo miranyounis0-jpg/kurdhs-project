@@ -8,6 +8,14 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json({ limit: '12mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+let stock = { one_day: [], seven_day: [], thirty_day: [], sixty_day: [] }; // sixty_day زیاد کرا
+let products = {
+    one_day: { price: 5, imageUrl: "" },
+    seven_day: { price: 20, imageUrl: "" },
+    thirty_day: { price: 60, imageUrl: "" },
+    sixty_day: { price: 100, imageUrl: "" } // نرخی ٦٠ ڕۆژیمان دانا بە ١٠٠ دۆلار
+};
+
 // --- ١. داتابەیس و گۆڕاوەکان ---
 let orders = []; 
 let stock = { one_day: [], seven_day: [], thirty_day: [] };
