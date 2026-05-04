@@ -143,6 +143,67 @@ app.post('/api/admin/deliver/:orderId', async (req, res) => {
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 app.get('/track', (req, res) => res.sendFile(path.join(__dirname, 'public', 'track.html')));
 
+// --- ٦. بەشی ئامارەکان (Analytics) ---
+let analyticsData = {
+    totalViews: 0,
+    uniqueVisitors: new Set(),
+    viewsToday: 0,
+    lastResetDate: new Date().toDateString(),
+    dailyStats: {} 
+};
+
+// ڕێگایەک بۆ ئەوەی سایتەکە سەردانەکان تۆمار بکات
+app.post('/api/track-visit', (req, res) => {
+    const today = new Date().toDateString();
+    const dateKey = new Date().toISOString().split('T')[0];
+
+    // ئەگەر ڕۆژ گۆڕابێت، ئاماری 'ئەمڕۆ' سفر دەکەینەوە
+    if (analyticsData.lastResetDate !== today) {
+        analyticsData.viewsToday = 0;
+        analyticsData.lastResetDate = today;
+    }
+
+    analyticsData.totalViews++;
+    analyticsData.viewsToday++;
+
+    // زیادکردنی ئاماری ڕۆژانە بۆ چارتەکە
+    if (!analyticsData.dailyStats[dateKey]) {
+        analyticsData.dailyStats[dateKey] = 0;
+    }
+    analyticsData.dailyStats[dateKey]++;
+
+    // بینەری ناوازە (بەپێی IP)
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    if (ip) analyticsData.uniqueVisitors.add(ip);
+
+    res.json({ success: true });
+});
+
+// ڕێگایەک بۆ ئەوەی ئەدمین پانێڵ داتاکان وەربگرێت
+app.get('/api/admin/analytics', (req, res) => {
+    const token = req.headers['x-admin-token'];
+    if (token !== adminToken) return res.status(401).json({ error: 'Unauthorized' });
+
+    // ئامادەکردنی داتا بۆ چارتی ٧ ڕۆژی ڕابردوو
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateKey = d.toISOString().split('T')[0];
+        last7Days.push({
+            date: dateKey,
+            views: analyticsData.dailyStats[dateKey] || 0
+        });
+    }
+
+    res.json({
+        totalViews: analyticsData.totalViews,
+        uniqueVisitors: analyticsData.uniqueVisitors.size,
+        viewsToday: analyticsData.viewsToday,
+        chartData: last7Days
+    });
+});
+
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT}`);
 });
