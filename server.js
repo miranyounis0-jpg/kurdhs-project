@@ -299,6 +299,70 @@ app.post('/api/admin/products', (req, res) => {
         return res.json({ success: true, message: 'نوێکرایەوە' });
     }
 
+// --- ٧. بەشی نوێکردنەوەی نرخ و وێنەی بەرهەمەکان (بەهێزکراو) ---
+
+// جۆری یەکەم: ئەگەر سایتەکە جۆرەکە لە ناو لینکەکەدا بنێرێت
+app.post('/api/admin/products/:type', (req, res) => {
+    const token = req.headers['x-admin-token'];
+    if (token !== adminToken) return res.status(401).json({ error: 'Unauthorized' });
+
+    let type = req.params.type;
+    const { price, imageUrl } = req.body;
+
+    let actualType = type;
+    if (type.includes('1') || type === 'one_day') actualType = 'one_day';
+    else if (type.includes('7') || type === 'seven_day') actualType = 'seven_day';
+    else if (type.includes('30') || type === 'thirty_day') actualType = 'thirty_day';
+
+    if (products[actualType]) {
+        if (price !== undefined && price !== "") products[actualType].price = Number(price);
+        if (imageUrl !== undefined && imageUrl !== "") products[actualType].imageUrl = imageUrl;
+        res.json({ success: true, message: 'بە سەرکەوتوویی نوێکرایەوە!' });
+    } else {
+        res.status(400).json({ error: 'بەرهەمەکە نەدۆزرایەوە' });
+    }
+});
+
+// جۆری دووەم: ئەگەر سایتەکە بەشێوەیەکی گشتی داتاکە بنێرێت
+app.post('/api/admin/products', (req, res) => {
+    const token = req.headers['x-admin-token'];
+    if (token !== adminToken) return res.status(401).json({ error: 'Unauthorized' });
+
+    const data = req.body;
+    
+    // ئەگەر سایتەکە جۆرەکەی خستبووە ناو بۆدییەکەوە
+    if (data && data.type) {
+        let actualType = data.type;
+        if (actualType.includes('1')) actualType = 'one_day';
+        else if (actualType.includes('7')) actualType = 'seven_day';
+        else if (actualType.includes('30')) actualType = 'thirty_day';
+
+        if (products[actualType]) {
+            if (data.price !== undefined) products[actualType].price = Number(data.price);
+            if (data.imageUrl !== undefined) products[actualType].imageUrl = data.imageUrl;
+            return res.json({ success: true, message: 'بە سەرکەوتوویی نوێکرایەوە!' });
+        }
+    }
+
+    // ئەگەر سایتەکە هەموو بەرهەمەکانی پێکەوە نارد
+    if (data && typeof data === 'object') {
+        for (const key in data) {
+            let actualKey = key;
+            if (key.includes('1')) actualKey = 'one_day';
+            else if (key.includes('7')) actualKey = 'seven_day';
+            else if (key.includes('30')) actualKey = 'thirty_day';
+
+            if (products[actualKey]) {
+                if (data[key].price !== undefined) products[actualKey].price = Number(data[key].price);
+                if (data[key].imageUrl !== undefined) products[actualKey].imageUrl = data[key].imageUrl;
+            }
+        }
+        return res.json({ success: true, message: 'نوێکرایەوە' });
+    }
+
+    res.status(400).json({ error: 'شێوازی ناردنی داتا هەڵەیە' });
+});
+    
     res.status(400).json({ error: 'شێوازی ناردنی داتا هەڵەیە' });
 });
 app.listen(PORT, '0.0.0.0', () => {
