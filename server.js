@@ -21,11 +21,11 @@ const adminToken = "secret-session-123";
 // --- ٢. ڕێکخستنی ئیمەیڵ (Nodemailer) ---
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // true بۆ پۆرتی 465، false بۆ پۆرتی 587
+    port: 465,       // گۆڕدرا بۆ 465
+    secure: true,    // گۆڕدرا بۆ true
     auth: {
         user: 'alleyesonyouna@gmail.com', 
-        pass: 'wflx yhmp puaj hsoj' // App Password ڕاستە
+        pass: 'wflxyhmppuajhsoj' // بۆشاییەکانمان لابرد
     }
 });
 
