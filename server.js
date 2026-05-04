@@ -204,6 +204,41 @@ app.get('/api/admin/analytics', (req, res) => {
     });
 });
 
+// --- ٧. بەشی نوێکردنەوەی نرخ و وێنەی بەرهەمەکان ---
+app.post('/api/admin/products/:type', (req, res) => {
+    const token = req.headers['x-admin-token'];
+    
+    // دڵنیابوونەوە لەوەی کە کەسەکە ئەدمینە
+    if (token !== adminToken) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { type } = req.params;
+    const { price, imageUrl } = req.body;
+
+    // گۆڕینی داتاکان
+    if (products[type]) {
+        if (price !== undefined) products[type].price = Number(price);
+        if (imageUrl !== undefined) products[type].imageUrl = imageUrl;
+        res.json({ success: true, message: 'بە سەرکەوتوویی نوێکرایەوە' });
+    } else {
+        res.status(400).json({ error: 'بەرهەمەکە نەدۆزرایەوە' });
+    }
+});
+
+// ئەگەر سایتەکەت داواکاری گشتی دەنێرێت (بۆ هەموو جۆرەکان):
+app.post('/api/admin/products', (req, res) => {
+    const token = req.headers['x-admin-token'];
+    if (token !== adminToken) return res.status(401).json({ error: 'Unauthorized' });
+
+    const updatedData = req.body;
+    for (const key in updatedData) {
+        if (products[key]) {
+            products[key].price = updatedData[key].price || products[key].price;
+            products[key].imageUrl = updatedData[key].imageUrl || products[key].imageUrl;
+        }
+    }
+    res.json({ success: true });
+});
+
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT}`);
 });
