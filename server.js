@@ -9,7 +9,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // --- ١. داتابەیس و گۆڕاوەکان (بە شێوەی داینامیک) ---
 let orders = []; 
-let stock = { one_day: [], seven_day: [], thirty_day: [] };
+let stock = { one_day: [], seven_day: [], thirty_day: [], sixty_day: [], ninety_day: [] };
 let products = {
     one_day: { price: 5, imageUrl: "", label: "1 Day Key" },
     seven_day: { price: 20, imageUrl: "", label: "7 Days Key" },
