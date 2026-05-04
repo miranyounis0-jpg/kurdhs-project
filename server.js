@@ -2,32 +2,61 @@
 // دڵنیابە لە سەرووی فایلەکە ئەمە هەیە
 const nodemailer = require('nodemailer');
 
-// دروستکردنی گواستەرەوەی ئیمەیڵ (Mailer)
+// لێرەدا ئیمەیڵی خۆت و App Passwordـەکەت دابنێ
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, // true بۆ پۆرتی 465، false بۆ پۆرتی 587
     auth: {
-        user: 'alleyesonyouna@gmail.com', // ئیمەیڵی خۆت لێرە بنووسە
-        pass: 'wflx yhmp puaj hsoj'     // 'App Password' لێرە دابنێ (نەک پاسوۆردی ئاسایی)
+        user: 'alleyesonyouna@gmail.com', 
+        pass: 'wflx yhmp puaj hsoj'
     }
 });
 
-// گۆڕینی بەشی deliver بۆ ئەوەی ئیمەیڵ بنێرێت
 app.post('/api/admin/deliver/:orderId', async (req, res) => {
-    // ... کۆدی دۆزینەوەی داواکاری و دەرهێنانی کلیل ...
+    const { orderId } = req.params;
+    const token = req.headers['x-admin-token'];
 
+    if (token !== adminToken) return res.status(401).json({ error: 'Unauthorized' });
+
+    const orderIndex = orders.findIndex(o => o.id === orderId);
+    if (orderIndex === -1) return res.status(404).json({ error: 'Order not found' });
+
+    const order = orders[orderIndex];
+
+    if (!stock[order.type] || stock[order.type].length === 0) {
+        return res.status(400).json({ error: 'No keys in stock' });
+    }
+
+    const assignedKey = stock[order.type].shift(); // دەرهێنانی کلیل لە ستۆک
+
+    // نوێکردنەوەی باری داواکاری
+    orders[orderIndex].status = 'delivered';
+    orders[orderIndex].key = assignedKey;
+    orders[orderIndex].deliveredAt = new Date().toISOString();
+
+    // ناردنی ئیمەیڵ[cite: 5]
     const mailOptions = {
-        from: 'alleyesonyouna@gmail.com',
-        to: order.email,
+        from: '"kurdHS Team" <alleyesonyouna@gmail.com>',
+        to: order.email, // ئیمەیڵی کڕیار[cite: 5]
         subject: `Your Key - ${order.label}`,
-        text: `Hi! Your payment is verified. Your key is: ${assignedKey}`
+        html: `
+            <div style="font-family: sans-serif; padding: 20px; background-color: #f4f4f4;">
+                <h2>Hi! Your key is ready.</h2>
+                <p>Product: <b>${order.label}</b></p>
+                <div style="padding: 15px; background: #fff; border: 2px solid #00e5ff; font-size: 20px; font-weight: bold; text-align: center;">
+                    ${assignedKey}
+                </div>
+                <p>Thank you for choosing kurdHS!</p>
+            </div>`
     };
 
     try {
-        await transporter.sendMail(mailOptions); // ناردنی ئیمەیڵەکە
-        res.json({ success: true, message: 'ئیمەیڵ بۆ کڕیارەکە نێردرا!' });
+        await transporter.sendMail(mailOptions);
+        res.json({ success: true, message: 'کلیلەکە گەیەندرا و ئیمەیڵەکەش نێردرا!' });
     } catch (error) {
-        console.error('Email Error:', error);
-        res.status(500).json({ error: 'کلیلەکە گەیەندرا بەڵام ئیمەیڵەکە نەڕۆیشت' });
+        console.error('SMTP Error:', error);
+        res.json({ success: true, message: 'کلیلەکە گەیەندرا بەڵام ئیمەیڵەکە نەنێردرا. کێشەی SMTP هەیە.' });
     }
 });
 
