@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000; // Required for Render
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -15,26 +15,31 @@ let products = {
 };
 let adminToken = "secret-session-123";
 
-// --- API FOR INDEX.HTML ---
+// --- API FOR ADMIN PANEL & STOREFRONT ---
 
-// Fix: This provides the price and image data your index.html needs
+// Fix: This provides the key lists to the admin "Stock Management" tab
+app.get('/api/admin/stock', (req, res) => {
+    const token = req.headers['x-admin-token'];
+    if (token !== adminToken) return res.status(401).json({ error: 'Unauthorized' });
+    res.json(stock);
+});
+
+// Fix: This provides product prices and images
 app.get('/api/products', (req, res) => {
     res.json(products);
 });
 
-// Fix: This provides the key counts (stock) your index.html needs
-app.get('/api/stock', (req, res) => {
-    // We send back the length (count) of each key array
-    const counts = {
-        one_day: stock.one_day.length,
-        seven_day: stock.seven_day.length,
-        thirty_day: stock.thirty_day.length
-    };
-    res.json(counts);
+// Fix: This allows the admin panel to actually add keys[cite: 3, 5]
+app.post('/api/admin/stock/add', (req, res) => {
+    const token = req.headers['x-admin-token'];
+    const { type, keys } = req.body;
+    if (token !== adminToken) return res.status(401).json({ error: 'Unauthorized' });
+    if (!stock[type]) stock[type] = [];
+    stock[type] = [...stock[type], ...keys];
+    res.json({ message: 'Keys added!', added: keys.length });
 });
 
-// --- ADMIN API ROUTES ---
-
+// Admin Login[cite: 3, 5]
 app.post('/api/admin/login', (req, res) => {
     if (req.body.password === 'admin123') {
         res.json({ token: adminToken });
@@ -43,15 +48,7 @@ app.post('/api/admin/login', (req, res) => {
     }
 });
 
-app.post('/api/admin/stock/add', (req, res) => {
-    const { type, keys } = req.body;
-    if (!stock[type]) stock[type] = [];
-    stock[type] = [...stock[type], ...keys];
-    res.json({ message: 'Keys added!', added: keys.length });
-});
-
-// --- PAGE NAVIGATION ---
-
+// --- NAVIGATION ---
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
